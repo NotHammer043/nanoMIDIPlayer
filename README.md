@@ -25,6 +25,10 @@ https://github.com/NotHammer043/nanoMIDIPlayer/assets/107131733/a970179f-d417-4e
 
 **6.** Select a MIDI File and click **PLAY** (Default Hotkey F1 "*modifiable*")
 
+**VIDEO TUTORIAL**
+
+https://www.youtube.com/watch?v=coS4-w0SScE
+
 # Contribution
 
 contribute plz im bad at coding
