@@ -8,9 +8,9 @@
     "CTkFrame": {
       "corner_radius": 6,
       "border_width": 0,
-      "fg_color": ["white", "gray2"],
-      "top_fg_color": ["white", "gray2"],
-      "border_color": ["white", "gray2"]
+      "fg_color": ["gray2", "gray2"],
+      "top_fg_color": ["gray2", "gray2"],
+      "border_color": ["gray2", "gray2"]
     },
     "CTkButton": {
       "corner_radius": 6,
@@ -29,10 +29,10 @@
     "CTkEntry": {
       "corner_radius": 6,
       "border_width": 2,
-      "fg_color": ["white", "black"],
-      "border_color": ["white", "black"],
-      "text_color":["black", "white"],
-      "placeholder_text_color": ["gray52", "gray62"]
+      "fg_color": ["black", "black"],
+      "border_color": ["black", "black"],
+      "text_color":["white", "white"],
+      "placeholder_text_color": ["gray62", "gray62"]
     },
     "CTkCheckBox": {
       "corner_radius": 6,
@@ -48,12 +48,12 @@
       "corner_radius": 1000,
       "border_width": 3,
       "button_length": 0,
-      "fg_color": ["lightgray", "gray"],
-      "progress_color": ["white", "black"],
-      "button_color": ["gray36", "white"],
-      "button_hover_color": ["gray20", "gray100"],
-      "text_color": ["black", "white"],
-      "text_color_disabled": ["gray60", "gray45"]
+      "fg_color": ["gray", "gray"],
+      "progress_color": ["black", "black"],
+      "button_color": ["white", "white"],
+      "button_hover_color": ["gray100", "gray100"],
+      "text_color": ["white", "white"],
+      "text_color_disabled": ["gray45", "gray45"]
     },
     "CTkRadioButton": {
       "corner_radius": 1000,
@@ -79,16 +79,16 @@
       "button_length": 0,
       "fg_color": ["gray25", "gray25"],
       "progress_color": ["gray10", "gray10"],
-      "button_color": ["black", "gray10"],
+      "button_color": ["gray10", "gray10"],
       "button_hover_color": ["gray20", "gray20"]
     },
     "CTkOptionMenu": {
       "corner_radius": 6,
       "fg_color": ["black", "black"],
-      "button_color": ["gray36", "gray10"],
-      "button_hover_color": ["gray10", "gray15"],
-      "text_color": ["black", "white"],
-      "text_color_disabled": ["gray74", "gray60"]
+      "button_color": ["gray10", "gray10"],
+      "button_hover_color": ["gray15", "gray15"],
+      "text_color": ["white", "white"],
+      "text_color_disabled": ["gray60", "gray60"]
     },
     "CTkComboBox": {
       "corner_radius": 6,
