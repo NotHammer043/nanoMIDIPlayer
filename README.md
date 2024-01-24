@@ -25,7 +25,7 @@ https://github.com/NotHammer043/nanoMIDIPlayer/assets/107131733/a970179f-d417-4e
 
 **6.** Select a MIDI File and click **PLAY** (Default Hotkey F1 "*modifiable*")
 
-# Contribute
+# Contribution
 
 contribute plz im bad at coding
 
@@ -33,3 +33,26 @@ contribute plz im bad at coding
 - [ ]  MIDI Files Hub
 - [ ]  Multiple MIDI selection (for mixing 2 or more songs like F1 for song1 and F2 for song2)
 - [ ]  idk
+
+# Building
+**REQUIREMENTS**
+
+* [VS BuildTools C++](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+* [Python 3.11.4](https://www.python.org/ftp/python/3.11.4/python-3.11.4-amd64.exe)
+* requirements.txt
+```
+customtkinter==5.2.2
+keyboard==0.13.5
+mido==1.3.2
+Pillow==9.4.0
+Pillow==10.2.0
+```
+* Nuitka (Compiler)
+```
+pip install nuitka
+```
+
+**BUILD**
+```
+nuitka --onefile --windows-icon-from-ico="./icon.ico" --enable-plugin=tk-inter --include-module=mido.backends.rtmidi --windows-disable-console nanoMIDIPlayer.py
+```
