@@ -2,7 +2,7 @@
 
 **nanoMIDIPlayer** is a lightweight application designed to play MIDI files directly to a MIDI Output. Mainly designed for "[LoopBe1](https://nerds.de/data/setuploopbe1.exe)" and "[MIDI to QWERTY](https://github.com/ArijanJ/miditoqwerty/releases/)".
 
-# ⚠️ nanoMIDIPlayer is highly flagged by [Windows Defender][Windows Defender](https://www.youtube.com/watch?v=dQw4w9WgXcQ) and scanning tools like [VirusTotal](https://www.virustotal.com/) due to the way the Executable is Compiled! (Nuitka Obfuscator makes it worst, i only used it because it could compile with the packages)
+# ⚠️ nanoMIDIPlayer is highly flagged by [Windows Defender](https://www.youtube.com/watch?v=dQw4w9WgXcQ) and scanning tools like [VirusTotal](https://www.virustotal.com/) due to the way the Executable is Compiled! (Nuitka Obfuscator makes it worst, i only used it because it could compile with the packages)
 
 ## Showcase
 
