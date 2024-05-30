@@ -13,7 +13,9 @@ The MIDI Function is mainly designed for "[LoopBe1](https://nerds.de/data/setupl
 
   
 
-https://nanomidi.net
+
+https://github.com/NotHammer043/nanoMIDIPlayer/assets/107131733/1b12c130-8a94-40d5-863a-61961f70fa5f
+
 
   
 
@@ -65,3 +67,10 @@ pip install pyinstaller
 ```
 pyinstaller --onefile --icon="./assets/icon.ico" --hidden-import=mido.backends.rtmidi --noconsole nanoMIDIPlayer.py
 ```
+
+
+**Beta Testers**
+- **redxyzxd**
+- **sherben10**
+- **nictiser**
+- **10cryptic**
