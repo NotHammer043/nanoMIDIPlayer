@@ -1,0 +1,13 @@
+{
+  "midiFile": "",
+  "useMIDI": false,
+  "playHotkey": "F1",
+  "pauseHotkey": "F2",
+  "stopHotkey": "F3",
+  "sustainEnabled": false,
+  "noDoubles": true,
+  "velocity": false,
+  "88Keys": true,
+  "console": false,
+  "sustainCutoff": 63
+}

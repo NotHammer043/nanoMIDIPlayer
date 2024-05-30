@@ -1,0 +1,6 @@
+customtkinter
+Pillow
+mido
+keyboard
+requests
+python-rtmidi
