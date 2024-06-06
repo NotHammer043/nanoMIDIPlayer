@@ -68,9 +68,15 @@ pip install pyinstaller
 pyinstaller --onefile --icon="./assets/icon.ico" --hidden-import=mido.backends.rtmidi --noconsole nanoMIDIPlayer.py
 ```
 
+**Debugging**
+
+```
+nanoMIDIPlayer.exe --debug
+```
 
 **Beta Testers**
 - **redxyzxd**
 - **sherben10**
 - **nictiser**
 - **10cryptic**
+- **xaydd**
