@@ -388,10 +388,10 @@ class App(customtkinter.CTk):
 
         # END
         if config_data['console']:
-            threading.Thread(target=self.consolekl_text_insert, args=(f"If playback is laggy",)).start()
-            threading.Thread(target=self.consolekl_text_insert, args=(f"Consider disabling this :)",)).start()
+            self.consolekl_text_insert_ignorefalse("If playback is laggy",)
+            self.consolekl_text_insert_ignorefalse("Consider disabling this :)")
         else:
-            threading.Thread(target=self.consolekl_text_insert_ignorefalse, args=(f"Disabled",)).start()
+            self.consolekl_text_insert_ignorefalse("Disabled")
         self.select_frame_by_name("home")
         self.useMIDIStatus()
         self.hasMIDI()
@@ -543,7 +543,7 @@ class App(customtkinter.CTk):
             self.pause_hotkey.configure(state="normal")
             self.stop_hotkey.configure(state="normal")
             self.speed_hotkey.configure(state="normal")
-            self.stop_hotkey.configure(state="normal")
+            self.slow_hotkey.configure(state="normal")
         else:
             self.home_frame_combobox_1.configure(state="normal")
             self.home_frame_label_1_toggle_sustain.configure(state="disabled")
@@ -553,7 +553,7 @@ class App(customtkinter.CTk):
             self.pause_hotkey.configure(state="disabled")
             self.stop_hotkey.configure(state="disabled")
             self.speed_hotkey.configure(state="disabled")
-            self.stop_hotkey.configure(state="disabled")
+            self.slow_hotkey.configure(state="disabled")
 
     def playButtonCommand(self, event=None):
         if self.isRunning:
@@ -1032,7 +1032,7 @@ class App(customtkinter.CTk):
             oldest_label = self.log_labels.pop(0)
             oldest_label.destroy()
 
-        if len(self.consolekl.winfo_children()) > 10:
+        if len(self.consolekl.winfo_children()) > 20:
             for widget in self.consolekl.winfo_children():
                 widget.destroy()
 
