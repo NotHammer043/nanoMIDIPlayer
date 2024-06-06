@@ -16,6 +16,9 @@ import re
 import base64
 import io
 import tempfile
+import argparse
+import ctypes
+import sys
 from threading import Thread, Event
 
 config_path = "./config.json"
@@ -33,7 +36,7 @@ class App(customtkinter.CTk):
         self.playback_state = False
         self.playback_start_time = None
         self.last_update_time = None
-        self.max_log_messages = 9
+        self.max_log_messages = 5
         self.isRunning = False
         self.log_labels = []
         self.sustainToggle = False
@@ -43,6 +46,16 @@ class App(customtkinter.CTk):
         self.paused = False
         self.selected_device = None
         self.midi_file_path = None
+        self.hasUpdated = False
+        self.playback_speed = 100
+        
+        parser = argparse.ArgumentParser(description='nanoMIDIPlayer')
+        parser.add_argument('--debug', action='store_true', help='debug console')
+        args = parser.parse_args()
+
+        if args.debug:
+            self.create_debug_console()
+            print("console opened.")
 
         super().__init__()
         """ This is to stream the theme.json
@@ -123,7 +136,7 @@ class App(customtkinter.CTk):
         self.midi_hub.grid(row=2, column=0, sticky="ew")
 
         self.versionlabel = customtkinter.CTkLabel(
-            self.navigation_frame, text="nanoMIDI // v4.20", fg_color="transparent", text_color="#191919", font=consolas_font
+            self.navigation_frame, text="nanoMIDI // v4.69", fg_color="transparent", text_color="#191919", font=consolas_font
         )
         self.versionlabel.grid(row=6, column=0, padx=20, pady=1, sticky="s")
 
@@ -173,10 +186,6 @@ class App(customtkinter.CTk):
         switchVelocityvar = customtkinter.StringVar(value="off")
         switch88Keysvar = customtkinter.StringVar(value="off")
         switchConsolevar = customtkinter.StringVar(value="off")
-                
-        self.playHotkey = config_data.get('playHotkey', 'F1')
-        self.pauseHotkey = config_data.get('pauseHotkey', 'F2')
-        self.stopHotkey = config_data.get('stopHotkey', 'F3')
 
         self.midi_port_lock = threading.Lock()
 
@@ -224,13 +233,14 @@ class App(customtkinter.CTk):
         )
         self.select_file_button.grid(row=2, column=0, padx=(0,55), pady=(10,0), sticky="e")
 
-        self.consolekl = customtkinter.CTkScrollableFrame(master=self.home_frame, width=180)
+        self.consolekl = customtkinter.CTkFrame(master=self.home_frame, width=200, height=115)
         self.consolekl.grid(row=4, column=0, padx=(0,40), pady=(10,0), sticky="ne")
+        self.consolekl.pack_propagate(0)
 
         self.home_frame_label_1_toggle_console = customtkinter.CTkSwitch(
             self.home_frame, text="Console", command=switchConsole, variable=switchConsolevar, font=consolas_font, onvalue="on", offvalue="off"
         )
-        self.home_frame_label_1_toggle_console.grid(row=4, column=0, padx=(0, 40), pady=(0, 0), sticky="se")
+        self.home_frame_label_1_toggle_console.grid(row=4, column=0, padx=(0, 40), pady=(0, 10), sticky="se")
 
         self.home_frame_label_1_toggle_sustain = customtkinter.CTkSwitch(
             self.home_frame, text="Sustain   ", command=switchSustain, variable=switchSustainvar, font=consolas_font, onvalue="on", offvalue="off"
@@ -250,7 +260,7 @@ class App(customtkinter.CTk):
         self.home_frame_label_1_toggle_88keys = customtkinter.CTkSwitch(
             self.home_frame, text="88 Keys   ", command=switch88Keys, variable=switch88Keysvar, font=consolas_font, onvalue="on", offvalue="off"
         )
-        self.home_frame_label_1_toggle_88keys.grid(row=4, column=0, padx=(40, 0), pady=(100, 30), sticky="nw")
+        self.home_frame_label_1_toggle_88keys.grid(row=4, column=0, padx=(40, 0), pady=(100, 10), sticky="nw")
         
         self.play_button = customtkinter.CTkButton(
             self.home_frame, text="Play",fg_color="#006900", width=80, command=self.playButtonCommand, font=consolas_font
@@ -265,32 +275,52 @@ class App(customtkinter.CTk):
         self.home_frame_label_3 = customtkinter.CTkLabel(
             self.home_frame, text=" Play:", fg_color="transparent", font=consolas_font
         )
-        self.home_frame_label_3.grid(row=4, column=0, padx=(0, 300), pady=(0, 60), sticky="s")
+        self.home_frame_label_3.grid(row=5, column=0, padx=(0, 300), pady=(0, 60), sticky="s")
 
         self.play_hotkey = customtkinter.CTkButton(
             self.home_frame, text=config_data.get('playHotkey', 'F1'), width=70, command=self.getPlayHotkey, font=consolas_font
         )
-        self.play_hotkey.grid(row=4, column=0, padx=(0, 160), pady=(0, 60), sticky="s")
+        self.play_hotkey.grid(row=5, column=0, padx=(0, 165), pady=(0, 60), sticky="s")
 
         self.home_frame_label_4 = customtkinter.CTkLabel(
             self.home_frame, text="Pause:", fg_color="transparent", font=consolas_font
         )
-        self.home_frame_label_4.grid(row=4, column=0, padx=(0, 300), pady=(0, 30), sticky="s")
+        self.home_frame_label_4.grid(row=5, column=0, padx=(0, 300), pady=(0, 30), sticky="s")
 
         self.pause_hotkey = customtkinter.CTkButton(
             self.home_frame, text=config_data.get('pauseHotkey', 'F2'), width=70, command=self.getPauseHotkey, font=consolas_font
         )
-        self.pause_hotkey.grid(row=4, column=0, padx=(0, 160), pady=(0, 30), sticky="s")
+        self.pause_hotkey.grid(row=5, column=0, padx=(0, 165), pady=(0, 30), sticky="s")
 
         self.home_frame_label_5 = customtkinter.CTkLabel(
             self.home_frame, text=" Stop:", fg_color="transparent", font=consolas_font
         )
-        self.home_frame_label_5.grid(row=4, column=0, padx=(0, 300), pady=(0, 0), sticky="s")
+        self.home_frame_label_5.grid(row=5, column=0, padx=(0, 300), pady=(0, 0), sticky="s")
 
         self.stop_hotkey = customtkinter.CTkButton(
             self.home_frame, text=config_data.get('stopHotkey', 'F3'), width=70, command=self.getStopHotkey, font=consolas_font
         )
-        self.stop_hotkey.grid(row=4, column=0, padx=(0, 160), pady=(0, 0), sticky="s")
+        self.stop_hotkey.grid(row=5, column=0, padx=(0, 165), pady=(0, 0), sticky="s")
+
+        self.home_frame_label_6 = customtkinter.CTkLabel(
+            self.home_frame, text="Slow Down:", fg_color="transparent", font=consolas_font
+        )
+        self.home_frame_label_6.grid(row=5, column=0, padx=(80, 0), pady=(0, 60), sticky="s")
+
+        self.speed_hotkey = customtkinter.CTkButton(
+            self.home_frame, text=config_data.get('speedHotkey', 'F3'), width=70, command=self.getSpeedUpHotkey, font=consolas_font
+        )
+        self.speed_hotkey.grid(row=5, column=0, padx=(250, 0), pady=(0, 60), sticky="s")
+
+        self.home_frame_label_7 = customtkinter.CTkLabel(
+            self.home_frame, text=" Speed Up:", fg_color="transparent", font=consolas_font
+        )
+        self.home_frame_label_7.grid(row=5, column=0, padx=(80, 0), pady=(0, 30), sticky="s")
+
+        self.slow_hotkey = customtkinter.CTkButton(
+            self.home_frame, text=config_data.get('slowHotkey', 'F3'), width=70, command=self.getSlowDownHotkey, font=consolas_font
+        )
+        self.slow_hotkey.grid(row=5, column=0, padx=(250, 0), pady=(0, 30), sticky="s")
 
         self.timeline = customtkinter.CTkLabel(
             self.home_frame, text="0:00:00 / 0:00:00", fg_color="transparent", font=consolas_font
@@ -304,7 +334,7 @@ class App(customtkinter.CTk):
 
         # 
 
-        self.speed = customtkinter.CTkSlider(self.home_frame, from_=50, to=1000, command=self.sliderupdate)
+        self.speed = customtkinter.CTkSlider(self.home_frame, from_=50, to=500, command=self.sliderupdate)
         self.speed.grid(row=9, column=0, padx=(0,50), pady=(15, 0))
         self.speed.set(100)
 
@@ -445,15 +475,19 @@ class App(customtkinter.CTk):
         with open(filepath, "wb") as f:
             f.write(response.content)
         self.select_frame_by_name("home")
+        self.timeline.configure(text=f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}")
         threading.Thread(target=app.consolekl_text_insert, args=(f"Downloaded!",)).start()
         threading.Thread(target=app.consolekl_text_insert, args=(filename,)).start()
         midi_file = MidiFile(filepath)
         self.total_time = midi_file.length
         self.timeline.configure(text=f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}")
 
-        keyboard.on_press_key(app.playHotkey, app.toggle_playback)
-        keyboard.on_press_key(app.pauseHotkey, app.pause_playback)
-        keyboard.on_press_key(app.stopHotkey, app.stop_playback)
+        keyboard.unhook_all()
+        keyboard.on_press_key(config_data['playHotkey'], app.toggle_playback)
+        keyboard.on_press_key(config_data['pauseHotkey'], app.pause_playback)
+        keyboard.on_press_key(config_data['stopHotkey'], app.stop_playback)
+        keyboard.on_press_key(config_data['speedHotkey'], app.speedup_playback)
+        keyboard.on_press_key(config_data['slowHotkey'], app.slowdown_playback)
 
     def midi_hub_footer(self):
         pagination_frame = customtkinter.CTkFrame(master=self.midi_hub_frame)
@@ -488,9 +522,16 @@ class App(customtkinter.CTk):
     def hasMIDI(self):
         if not config_data.get('midiFile') == "":
             self.home_frame_entry_1.insert(0, config_data.get('midiFile'))
+
+            midifile = MidiFile(config_data.get('midiFile'))
+            self.total_time = midifile.length
+            self.timeline.configure(text=f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}")
+
             keyboard.on_press_key(config_data['playHotkey'], self.toggle_playback)
             keyboard.on_press_key(config_data['pauseHotkey'], self.pause_playback)
             keyboard.on_press_key(config_data['stopHotkey'], self.stop_playback)
+            keyboard.on_press_key(config_data['speedHotkey'], self.speedup_playback)
+            keyboard.on_press_key(config_data['slowHotkey'], self.slowdown_playback)
     
     def useMIDIStatus(self, event=None):
         if not config_data.get('useMIDI', False):
@@ -501,6 +542,8 @@ class App(customtkinter.CTk):
             self.home_frame_label_1_toggle_88keys.configure(state="normal")
             self.pause_hotkey.configure(state="normal")
             self.stop_hotkey.configure(state="normal")
+            self.speed_hotkey.configure(state="normal")
+            self.stop_hotkey.configure(state="normal")
         else:
             self.home_frame_combobox_1.configure(state="normal")
             self.home_frame_label_1_toggle_sustain.configure(state="disabled")
@@ -508,6 +551,8 @@ class App(customtkinter.CTk):
             self.home_frame_label_1_toggle_velocity.configure(state="disabled")
             self.home_frame_label_1_toggle_88keys.configure(state="disabled")
             self.pause_hotkey.configure(state="disabled")
+            self.stop_hotkey.configure(state="disabled")
+            self.speed_hotkey.configure(state="disabled")
             self.stop_hotkey.configure(state="disabled")
 
     def playButtonCommand(self, event=None):
@@ -520,11 +565,12 @@ class App(customtkinter.CTk):
         rounded_value = round(float(value))
         self.speedtext.delete(0, "end")
         self.speedtext.insert(0, str(rounded_value))
+        self.playback_speed = min(500, rounded_value)
 
     def slidertoentry(self, event=None):
         try:
             value = float(self.speedtext.get())
-            if 50 <= value <= 1000:
+            if 10 <= value <= 500:
                 self.speed.set(value)
         except ValueError:
             pass
@@ -535,6 +581,7 @@ class App(customtkinter.CTk):
         self.speedtext.insert(0, str(value))
 
     def resetspeedvalue(self):
+        self.playback_speed = min(500, 100)
         self.speedtext.delete(0, "end")
         self.speedtext.insert(0, 100)
         self.speed.set(100)
@@ -557,6 +604,8 @@ class App(customtkinter.CTk):
         keyboard.on_press_key(config_data['playHotkey'], self.toggle_playback)
         keyboard.on_press_key(config_data['pauseHotkey'], self.pause_playback)
         keyboard.on_press_key(config_data['stopHotkey'], self.stop_playback)
+        keyboard.on_press_key(config_data['speedHotkey'], self.speedup_playback)
+        keyboard.on_press_key(config_data['slowHotkey'], self.slowdown_playback)
 
         self.unbind("<Key>")
 
@@ -578,6 +627,8 @@ class App(customtkinter.CTk):
         keyboard.on_press_key(config_data['playHotkey'], self.toggle_playback)
         keyboard.on_press_key(config_data['pauseHotkey'], self.pause_playback)
         keyboard.on_press_key(config_data['stopHotkey'], self.stop_playback)
+        keyboard.on_press_key(config_data['speedHotkey'], self.speedup_playback)
+        keyboard.on_press_key(config_data['slowHotkey'], self.slowdown_playback)
 
         self.unbind("<Key>")
 
@@ -599,6 +650,54 @@ class App(customtkinter.CTk):
         keyboard.on_press_key(config_data['playHotkey'], self.toggle_playback)
         keyboard.on_press_key(config_data['pauseHotkey'], self.pause_playback)
         keyboard.on_press_key(config_data['stopHotkey'], self.stop_playback)
+        keyboard.on_press_key(config_data['speedHotkey'], self.speedup_playback)
+        keyboard.on_press_key(config_data['slowHotkey'], self.slowdown_playback)
+
+        self.unbind("<Key>")
+
+    def getSpeedUpHotkey(self):
+        keyboard.unhook_all()
+        self.speed_hotkey.configure(text="Press Key")
+        self.bind("<Key>", self.getSpeedUpPressedkey)
+
+    def getSpeedUpPressedkey(self, event):
+        new_hotkey = event.keysym
+        self.speed_hotkey.configure(text=new_hotkey)
+
+        self.hotkey = new_hotkey
+        config_data['speedHotkey'] = new_hotkey
+        with open(config_path, 'w') as config_file:
+            json.dump(config_data, config_file, indent=2)
+
+        keyboard.unhook_all()
+        keyboard.on_press_key(config_data['playHotkey'], self.toggle_playback)
+        keyboard.on_press_key(config_data['pauseHotkey'], self.pause_playback)
+        keyboard.on_press_key(config_data['stopHotkey'], self.stop_playback)
+        keyboard.on_press_key(config_data['speedHotkey'], self.speedup_playback)
+        keyboard.on_press_key(config_data['slowHotkey'], self.slowdown_playback)
+
+        self.unbind("<Key>")
+
+    def getSlowDownHotkey(self):
+        keyboard.unhook_all()
+        self.slow_hotkey.configure(text="Press Key")
+        self.bind("<Key>", self.getSlowDownPressedkey)
+
+    def getSlowDownPressedkey(self, event):
+        new_hotkey = event.keysym
+        self.slow_hotkey.configure(text=new_hotkey)
+
+        self.hotkey = new_hotkey
+        config_data['slowHotkey'] = new_hotkey
+        with open(config_path, 'w') as config_file:
+            json.dump(config_data, config_file, indent=2)
+
+        keyboard.unhook_all()
+        keyboard.on_press_key(config_data['playHotkey'], self.toggle_playback)
+        keyboard.on_press_key(config_data['pauseHotkey'], self.pause_playback)
+        keyboard.on_press_key(config_data['stopHotkey'], self.stop_playback)
+        keyboard.on_press_key(config_data['speedHotkey'], self.speedup_playback)
+        keyboard.on_press_key(config_data['slowHotkey'], self.slowdown_playback)
 
         self.unbind("<Key>")
 
@@ -718,7 +817,9 @@ class App(customtkinter.CTk):
                 if log_message is not None:
                     print(log_message)
 
-                threading.Thread(target=app.consolekl_text_insert, args=(f"{log_message}",)).start()
+                
+                if config_data.get('console', False):
+                    threading.Thread(target=app.consolekl_text_insert, args=(f"{log_message}",)).start()
 
             def parse_midi(message):
                 
@@ -757,34 +858,60 @@ class App(customtkinter.CTk):
                     json.dump(SavableSettings, f, indent=2)
 
             def midi_playback():
+                print("nanoMIDI Mid2VK Translator v1.0")
                 try:
                     mid = mido.MidiFile(self.midi_file_path)
-                    speed = self.speed.get() / 100
                     start_time = time.time()
+                    current_position = 0
+                    total_duration = mid.length
+
                     for msg in mid:
                         self.pause_event.wait()
                         elapsed_time = time.time() - start_time
-                        if msg.time > elapsed_time:
-                            time.sleep((msg.time - elapsed_time) / speed)
-                        start_time = time.time()
+                        time.sleep(msg.time * (100 / self.playback_speed))
                         parse_midi(msg)
+                        
                         if self.CloseThread:
                             break
+                        
                         self.CloseThread = False
+                        current_time = time.time()
+                        elapsed_time = current_time - start_time
+                        sleep_time = max(0, msg.time * (100 / self.playback_speed) - elapsed_time)
+                        time.sleep(sleep_time)
+                        start_time = current_time
+                        
+                        current_position += msg.time * (100 / self.playback_speed)
+                        current_time_str = time.strftime("%H:%M:%S", time.gmtime(current_position)).split(':')
+                        current_position_formatted = f"{int(current_time_str[0]) if current_time_str[0] != '00' else '0'}:{int(current_time_str[1]):02d}:{int(current_time_str[2]):02d}"
+                        total_duration_str = time.strftime("%H:%M:%S", time.gmtime(total_duration)).split(':')
+                        total_duration_formatted = f"{int(total_duration_str[0]) if total_duration_str[0] != '00' else '0'}:{int(total_duration_str[1]):02d}:{int(total_duration_str[2]):02d}"
+
+                        def updatetimeline():
+                            if not self.hasUpdated:
+                                self.hasUpdated = True
+                                self.timeline.configure(text=f"{current_position_formatted} / {total_duration_formatted}")
+                                time.sleep(1)
+                                self.hasUpdated = False
+
+                        threading.Thread(target=updatetimeline).start()
+                    
                     print("Done")
+                    midi_file = MidiFile(self.midi_file_path)
+                    self.total_time = midi_file.length
+                    self.timeline.configure(text=f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}")
                     self.isRunning = False
                     self.play_button.configure(text="Play", fg_color="#006900")
                     self.reset_button.configure(state="disabled", fg_color="#444444")
                     threading.Thread(target=app.consolekl_text_insert, args=(f"----- Done -----",)).start()
+
                 except Exception as e:
                     print("Error: ", e)
-                    self.isRunning = False
-                    self.reset_button.configure(state="disabled", fg_color="#444444")
-                    self.play_button.configure(text="Play", fg_color="#006900")
 
             if __name__ == "__main__":
                 load_files()
                 Thread(target=midi_playback, daemon=True).start()
+
         elif useMIDI: # Use MIDI
             if self.playback_state:
                 self.stop_playback_flag.set()
@@ -815,6 +942,26 @@ class App(customtkinter.CTk):
         if self.isRunning:
             self.pause_event.set()
             self.CloseThread = True
+
+    def speedup_playback(self, event=None):
+        self.playback_speed = max(10, self.playback_speed - 10)
+        self.speed.set(self.playback_speed)
+
+        rounded_value = round(float(self.playback_speed))
+        self.speedtext.delete(0, "end")
+        self.speedtext.insert(0, str(rounded_value))
+
+        print(f"speed: {self.playback_speed}")
+        
+    def slowdown_playback(self, event=None):
+        self.playback_speed = min(500, self.playback_speed + 10)
+        self.speed.set(self.playback_speed)
+
+        rounded_value = round(float(self.playback_speed))
+        self.speedtext.delete(0, "end")
+        self.speedtext.insert(0, str(rounded_value))
+        
+        print(f"speed: {self.playback_speed}")
 
     def play_midi_threaded(self):
         with self.midi_port_lock:
@@ -858,6 +1005,8 @@ class App(customtkinter.CTk):
             total_time = self.midi_file.length
             self.timeline.configure(text=f"0:00:00 / {str(datetime.timedelta(seconds=int(total_time)))}")
 
+
+            
     def consolekl_text_insert(self, text):
         if config_data.get('console', False):
             label = tk.Label(self.consolekl, text=text, fg="white", bg="#080404", height=1)
@@ -873,7 +1022,6 @@ class App(customtkinter.CTk):
                     widget.destroy()
 
             self.consolekl.update_idletasks()
-            self.consolekl._parent_canvas.yview_moveto(1)
 
     def consolekl_text_insert_ignorefalse(self, text):
         label = tk.Label(self.consolekl, text=text, fg="white", bg="#080404", height=1)
@@ -884,12 +1032,11 @@ class App(customtkinter.CTk):
             oldest_label = self.log_labels.pop(0)
             oldest_label.destroy()
 
-        if len(self.consolekl.winfo_children()) > 20:
+        if len(self.consolekl.winfo_children()) > 10:
             for widget in self.consolekl.winfo_children():
                 widget.destroy()
 
         self.consolekl.update_idletasks()
-        self.consolekl._parent_canvas.yview_moveto(1)
 
     def update_timeline(self):
         if self.playback_start_time is not None and self.playback_state:
@@ -923,9 +1070,11 @@ class App(customtkinter.CTk):
             with open(config_path, 'w') as config_file:
                 json.dump(config_data, config_file, indent=2)
 
-            keyboard.on_press_key(app.playHotkey, app.toggle_playback)
-            keyboard.on_press_key(app.pauseHotkey, app.pause_playback)
-            keyboard.on_press_key(app.stopHotkey, app.stop_playback)
+            keyboard.on_press_key(config_data['playHotkey'], app.toggle_playback)
+            keyboard.on_press_key(config_data['pauseHotkey'], app.pause_playback)
+            keyboard.on_press_key(config_data['stopHotkey'], app.stop_playback)
+            keyboard.on_press_key(config_data['speedHotkey'], app.speedup_playback)
+            keyboard.on_press_key(config_data['slowHotkey'], app.slowdown_playback)
 
     def select_frame_by_name(self, name):
         self.home_button.configure(fg_color=("gray5", "gray5") if name == "home" else "transparent")
@@ -948,6 +1097,12 @@ class App(customtkinter.CTk):
     def midi_hub_event(self):
         self.select_frame_by_name("midi_hub")
         threading.Thread(target=self.load_midi_data).start()
+
+    def create_debug_console(self):
+        ctypes.windll.kernel32.AllocConsole()
+        sys.stdout = open('CONOUT$', 'w')
+        sys.stderr = open('CONOUT$', 'w')
+        sys.stdin = open('CONIN$', 'r')
 
 if __name__ == "__main__":
     app = App()

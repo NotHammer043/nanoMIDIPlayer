@@ -1,5 +1,5 @@
 @ECHO OFF
 :a
-py nanoMIDIPlayer.py
+py nanoMIDIPlayer.py --debug
 PAUSE
 goto a
