@@ -4,6 +4,8 @@
   "playHotkey": "F1",
   "pauseHotkey": "F2",
   "stopHotkey": "F3",
+  "speedHotkey": "F4",
+  "slowHotkey": "F5",
   "sustainEnabled": false,
   "noDoubles": true,
   "velocity": false,
