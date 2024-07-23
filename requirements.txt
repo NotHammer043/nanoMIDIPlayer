@@ -4,3 +4,4 @@ mido
 keyboard
 requests
 python-rtmidi
+pyinstaller

@@ -11,5 +11,6 @@
   "velocity": false,
   "88Keys": true,
   "console": false,
+  "timestamp": true,
   "sustainCutoff": 63
 }
