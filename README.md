@@ -80,3 +80,5 @@ nanoMIDIPlayer.exe --debug
 - **nictiser**
 - **10cryptic**
 - **xaydd**
+- **somecoolname2**
+- **obanaiserpenthashira**
