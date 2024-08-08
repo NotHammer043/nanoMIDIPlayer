@@ -1,7 +1,7 @@
 customtkinter
 Pillow
 mido
-keyboard
+pynput
 requests
 python-rtmidi
 pyinstaller
