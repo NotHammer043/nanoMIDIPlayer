@@ -49,7 +49,7 @@ https://github.com/NotHammer043/nanoMIDIPlayer/assets/107131733/1b12c130-8a94-40
 customtkinter
 Pillow
 mido
-keyboard
+pynput
 requests
 python-rtmidi
 ```
