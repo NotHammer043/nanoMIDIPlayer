@@ -6,11 +6,13 @@
   "stopHotkey": "F3",
   "speedHotkey": "F4",
   "slowHotkey": "F5",
+  "topMost": true,
   "sustainEnabled": false,
   "noDoubles": true,
   "velocity": false,
   "88Keys": true,
   "console": false,
-  "timestamp": true,
-  "sustainCutoff": 63
+  "timestamp": false,
+  "sustainCutoff": 63,
+  "decreaseSize": 10
 }
