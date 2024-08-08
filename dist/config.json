@@ -12,7 +12,7 @@
   "velocity": false,
   "88Keys": true,
   "console": false,
-  "timestamp": false,
+  "timestamp": true,
   "sustainCutoff": 63,
   "decreaseSize": 10
 }
