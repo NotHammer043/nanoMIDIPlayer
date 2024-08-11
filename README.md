@@ -24,7 +24,7 @@ https://github.com/user-attachments/assets/84e9d8b1-2f60-41e9-8f5c-078aeadd7ecc
 
   
 
-## AutoPiano Setup
+## nanoMIDIPlayer Setup
 
 **1.** Download the latest copy of [nanoMIDIPlayer.exe](https://github.com/NotHammer043/nanoMIDIPlayer/releases) from [Releases](https://github.com/NotHammer043/nanoMIDIPlayer/releases)
 
