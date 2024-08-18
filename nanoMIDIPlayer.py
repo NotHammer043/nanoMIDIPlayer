@@ -5,6 +5,7 @@ import sys
 import time
 import json
 import mido
+import random
 import base64
 import ctypes
 import datetime
@@ -23,7 +24,7 @@ from threading import Event
 from tkinter import filedialog
 from pynput.keyboard import Controller, Key, Listener
 
-version = "6.94.20"
+version = "6.96.96"
 
 config_path = "./config.json"
 original_config = "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/main/config.json"
@@ -113,8 +114,8 @@ class App(customtkinter.CTk):
             f.write(requests.get(themejsurl).text)
         """
             
-        theme_base64 = "ewogICAgIkNUayI6IHsKICAgICAgImZnX2NvbG9yIjogWyJ3aGl0ZSIsICJibGFjayJdCiAgICB9LAogICAgIkNUa1RvcGxldmVsIjogewogICAgICAiZmdfY29sb3IiOiBbIndoaXRlIiwgImJsYWNrIl0KICAgIH0sCiAgICAiQ1RrRnJhbWUiOiB7CiAgICAgICJjb3JuZXJfcmFkaXVzIjogNiwKICAgICAgImJvcmRlcl93aWR0aCI6IDAsCiAgICAgICJmZ19jb2xvciI6IFsiZ3JheTIiLCAiZ3JheTIiXSwKICAgICAgInRvcF9mZ19jb2xvciI6IFsiZ3JheTIiLCAiZ3JheTIiXSwKICAgICAgImJvcmRlcl9jb2xvciI6IFsiZ3JheTIiLCAiZ3JheTIiXQogICAgfSwKICAgICJDVGtCdXR0b24iOiB7CiAgICAgICJjb3JuZXJfcmFkaXVzIjogNiwKICAgICAgImJvcmRlcl93aWR0aCI6IDAsCiAgICAgICJmZ19jb2xvciI6IFsiZ3JheTEwIiwgImdyYXkxMCJdLAogICAgICAiaG92ZXJfY29sb3IiOiBbImdyYXk1IiwgImdyYXk1Il0sCiAgICAgICJib3JkZXJfY29sb3IiOiBbIndoaXRlIiwgImJsYWNrIl0sCiAgICAgICJ0ZXh0X2NvbG9yIjogWyJibGFjayIsICJ3aGl0ZSJdLAogICAgICAidGV4dF9jb2xvcl9kaXNhYmxlZCI6IFsiZ3JheTc0IiwgImdyYXk2MCJdCiAgICB9LAogICAgIkNUa0xhYmVsIjogewogICAgICAiY29ybmVyX3JhZGl1cyI6IDAsCiAgICAgICJmZ19jb2xvciI6ICJ0cmFuc3BhcmVudCIsCiAgICAgICJ0ZXh0X2NvbG9yIjogWyJ3aGl0ZSIsICJ3aGl0ZSJdCiAgICB9LAogICAgIkNUa0VudHJ5IjogewogICAgICAiY29ybmVyX3JhZGl1cyI6IDYsCiAgICAgICJib3JkZXJfd2lkdGgiOiAyLAogICAgICAiZmdfY29sb3IiOiBbImJsYWNrIiwgImJsYWNrIl0sCiAgICAgICJib3JkZXJfY29sb3IiOiBbImJsYWNrIiwgImJsYWNrIl0sCiAgICAgICJ0ZXh0X2NvbG9yIjpbIndoaXRlIiwgIndoaXRlIl0sCiAgICAgICJwbGFjZWhvbGRlcl90ZXh0X2NvbG9yIjogWyJncmF5NjIiLCAiZ3JheTYyIl0KICAgIH0sCiAgICAiQ1RrQ2hlY2tCb3giOiB7CiAgICAgICJjb3JuZXJfcmFkaXVzIjogNiwKICAgICAgImJvcmRlcl93aWR0aCI6IDMsCiAgICAgICJmZ19jb2xvciI6IFsid2hpdGUiLCAiYmxhY2siXSwKICAgICAgImJvcmRlcl9jb2xvciI6IFsid2hpdGUiLCAiYmxhY2siXSwKICAgICAgImhvdmVyX2NvbG9yIjogWyJsaWdodGdyYXkiLCAiZ3JheSJdLAogICAgICAiY2hlY2ttYXJrX2NvbG9yIjogWyJibGFjayIsICJ3aGl0ZSJdLAogICAgICAidGV4dF9jb2xvciI6IFsiYmxhY2siLCAid2hpdGUiXSwKICAgICAgInRleHRfY29sb3JfZGlzYWJsZWQiOiBbImdyYXk2MCIsICJncmF5NDUiXQogICAgfSwKICAgICJDVGtTd2l0Y2giOiB7CiAgICAgICJjb3JuZXJfcmFkaXVzIjogMTAwMCwKICAgICAgImJvcmRlcl93aWR0aCI6IDMsCiAgICAgICJidXR0b25fbGVuZ3RoIjogMCwKICAgICAgImZnX2NvbG9yIjogWyJyZWQiLCAicmVkIl0sCiAgICAgICJwcm9ncmVzc19jb2xvciI6IFsiZ3JlZW4iLCAiZ3JlZW4iXSwKICAgICAgImJ1dHRvbl9jb2xvciI6IFsiZ3JheTE1IiwgImdyYXkxNSJdLAogICAgICAiYnV0dG9uX2hvdmVyX2NvbG9yIjogWyJncmF5MTAiLCAiZ3JheTEwIl0sCiAgICAgICJ0ZXh0X2NvbG9yIjogWyJ3aGl0ZSIsICJ3aGl0ZSJdLAogICAgICAidGV4dF9jb2xvcl9kaXNhYmxlZCI6IFsiZ3JheTQ1IiwgImdyYXk0NSJdCiAgICB9LAogICAgIkNUa1JhZGlvQnV0dG9uIjogewogICAgICAiY29ybmVyX3JhZGl1cyI6IDEwMDAsCiAgICAgICJib3JkZXJfd2lkdGhfY2hlY2tlZCI6IDYsCiAgICAgICJib3JkZXJfd2lkdGhfdW5jaGVja2VkIjogMywKICAgICAgImZnX2NvbG9yIjogWyJ3aGl0ZSIsICJibGFjayJdLAogICAgICAiYm9yZGVyX2NvbG9yIjogWyJ3aGl0ZSIsICJibGFjayJdLAogICAgICAiaG92ZXJfY29sb3IiOiBbImxpZ2h0Z3JheSIsICJncmF5Il0sCiAgICAgICJ0ZXh0X2NvbG9yIjogWyJibGFjayIsICJ3aGl0ZSJdLAogICAgICAidGV4dF9jb2xvcl9kaXNhYmxlZCI6IFsiZ3JheTYwIiwgImdyYXk0NSJdCiAgICB9LAogICAgIkNUa1Byb2dyZXNzQmFyIjogewogICAgICAiY29ybmVyX3JhZGl1cyI6IDEwMDAsCiAgICAgICJib3JkZXJfd2lkdGgiOiAwLAogICAgICAiZmdfY29sb3IiOiBbImxpZ2h0Z3JheSIsICJncmF5Il0sCiAgICAgICJwcm9ncmVzc19jb2xvciI6IFsid2hpdGUiLCAiYmxhY2siXSwKICAgICAgImJvcmRlcl9jb2xvciI6IFsiZ3JheSIsICJncmF5Il0KICAgIH0sCiAgICAiQ1RrU2xpZGVyIjogewogICAgICAiY29ybmVyX3JhZGl1cyI6IDEwMDAsCiAgICAgICJidXR0b25fY29ybmVyX3JhZGl1cyI6IDEwMDAsCiAgICAgICJib3JkZXJfd2lkdGgiOiA2LAogICAgICAiYnV0dG9uX2xlbmd0aCI6IDAsCiAgICAgICJmZ19jb2xvciI6IFsiZ3JheTI1IiwgImdyYXkyNSJdLAogICAgICAicHJvZ3Jlc3NfY29sb3IiOiBbImdyYXkxMCIsICJncmF5MTAiXSwKICAgICAgImJ1dHRvbl9jb2xvciI6IFsiZ3JheTEwIiwgImdyYXkxMCJdLAogICAgICAiYnV0dG9uX2hvdmVyX2NvbG9yIjogWyJncmF5MjAiLCAiZ3JheTIwIl0KICAgIH0sCiAgICAiQ1RrT3B0aW9uTWVudSI6IHsKICAgICAgImNvcm5lcl9yYWRpdXMiOiA2LAogICAgICAiZmdfY29sb3IiOiBbImJsYWNrIiwgImJsYWNrIl0sCiAgICAgICJidXR0b25fY29sb3IiOiBbImdyYXkxMCIsICJncmF5MTAiXSwKICAgICAgImJ1dHRvbl9ob3Zlcl9jb2xvciI6IFsiZ3JheTE1IiwgImdyYXkxNSJdLAogICAgICAidGV4dF9jb2xvciI6IFsid2hpdGUiLCAid2hpdGUiXSwKICAgICAgInRleHRfY29sb3JfZGlzYWJsZWQiOiBbImdyYXk2MCIsICJncmF5NjAiXQogICAgfSwKICAgICJDVGtDb21ib0JveCI6IHsKICAgICAgImNvcm5lcl9yYWRpdXMiOiA2LAogICAgICAiYm9yZGVyX3dpZHRoIjogMiwKICAgICAgImZnX2NvbG9yIjogWyJ3aGl0ZSIsICJibGFjayJdLAogICAgICAiYm9yZGVyX2NvbG9yIjogWyJ3aGl0ZSIsICJibGFjayJdLAogICAgICAiYnV0dG9uX2NvbG9yIjogWyJ3aGl0ZSIsICJibGFjayJdLAogICAgICAiYnV0dG9uX2hvdmVyX2NvbG9yIjogWyJncmF5NzAiLCAiZ3JheTQxIl0sCiAgICAgICJ0ZXh0X2NvbG9yIjogWyJibGFjayIsICJ3aGl0ZSJdLAogICAgICAidGV4dF9jb2xvcl9kaXNhYmxlZCI6IFsiZ3JheTUwIiwgImdyYXk0NSJdCiAgICB9LAogICAgIkNUa1Njcm9sbGJhciI6IHsKICAgICAgImNvcm5lcl9yYWRpdXMiOiAxMDAwLAogICAgICAiYm9yZGVyX3NwYWNpbmciOiA0LAogICAgICAiZmdfY29sb3IiOiAidHJhbnNwYXJlbnQiLAogICAgICAiYnV0dG9uX2NvbG9yIjogWyJsaWdodGdyYXkiLCAiZ3JheSJdLAogICAgICAiYnV0dG9uX2hvdmVyX2NvbG9yIjogWyJncmF5MjAiLCAiZ3JheTEwMCJdCiAgICB9LAogICAgIkNUa1NlZ21lbnRlZEJ1dHRvbiI6IHsKICAgICAgImNvcm5lcl9yYWRpdXMiOiA2LAogICAgICAiYm9yZGVyX3dpZHRoIjogMiwKICAgICAgImZnX2NvbG9yIjogWyJ3aGl0ZSIsICJibGFjayJdLAogICAgICAic2VsZWN0ZWRfY29sb3IiOiBbImdyYXkzNiIsICJ3aGl0ZSJdLAogICAgICAic2VsZWN0ZWRfaG92ZXJfY29sb3IiOiBbImdyYXkyMCIsICJncmF5MTAwIl0sCiAgICAgICJ1bnNlbGVjdGVkX2NvbG9yIjogWyJ3aGl0ZSIsICJibGFjayJdLAogICAgICAidW5zZWxlY3RlZF9ob3Zlcl9jb2xvciI6IFsibGlnaHRncmF5IiwgImdyYXkiXSwKICAgICAgInRleHRfY29sb3IiOiBbImJsYWNrIiwgIndoaXRlIl0sCiAgICAgICJ0ZXh0X2NvbG9yX2Rpc2FibGVkIjogWyJncmF5NzQiLCAiZ3JheTYwIl0KICAgIH0sCiAgICAiQ1RrVGV4dGJveCI6IHsKICAgICAgImNvcm5lcl9yYWRpdXMiOiA2LAogICAgICAiYm9yZGVyX3dpZHRoIjogMCwKICAgICAgImZnX2NvbG9yIjogWyJ3aGl0ZSIsICJibGFjayJdLAogICAgICAiYm9yZGVyX2NvbG9yIjogWyJ3aGl0ZSIsICJibGFjayJdLAogICAgICAidGV4dF9jb2xvciI6WyJibGFjayIsICJ3aGl0ZSJdLAogICAgICAic2Nyb2xsYmFyX2J1dHRvbl9jb2xvciI6IFsibGlnaHRncmF5IiwgImdyYXkiXSwKICAgICAgInNjcm9sbGJhcl9idXR0b25faG92ZXJfY29sb3IiOiBbImdyYXkyMCIsICJncmF5MTAwIl0KICAgIH0sCiAgICAiQ1RrU2Nyb2xsYWJsZUZyYW1lIjogewogICAgICAibGFiZWxfZmdfY29sb3IiOiBbImdyYXk3OCIsICJncmF5MjMiXQogICAgfSwKICAgICJEcm9wZG93bk1lbnUiOiB7CiAgICAgICJmZ19jb2xvciI6IFsid2hpdGUiLCAiYmxhY2siXSwKICAgICAgImhvdmVyX2NvbG9yIjogWyJsaWdodGdyYXkiLCAiZ3JheSJdLAogICAgICAidGV4dF9jb2xvciI6IFsiYmxhY2siLCAid2hpdGUiXQogICAgfSwKICAgICJDVGtGb250IjogewogICAgICAibWFjT1MiOiB7CiAgICAgICAgImZhbWlseSI6ICJTRiBEaXNwbGF5IiwKICAgICAgICAic2l6ZSI6IDEzLAogICAgICAgICJ3ZWlnaHQiOiAibm9ybWFsIgogICAgICB9LAogICAgICAiV2luZG93cyI6IHsKICAgICAgICAiZmFtaWx5IjogIkNvbnNvbGFzIiwKICAgICAgICAic2l6ZSI6IDE0LAogICAgICAgICJ3ZWlnaHQiOiAibm9ybWFsIgogICAgICB9LAogICAgICAiTGludXgiOiB7CiAgICAgICAgImZhbWlseSI6ICJSb2JvdG8iLAogICAgICAgICJzaXplIjogMTMsCiAgICAgICAgIndlaWdodCI6ICJub3JtYWwiCiAgICAgIH0KICAgIH0KICB9CiAgCg=="
-        #themejs = "./assets/theme.json"
+        theme_base64 = "ewogICAgIkNUayI6IHsKICAgICAgImZnX2NvbG9yIjogWyJibGFjayIsICJibGFjayJdCiAgICB9LAogICAgIkNUa1RvcGxldmVsIjogewogICAgICAiZmdfY29sb3IiOiBbImJsYWNrIiwgImJsYWNrIl0KICAgIH0sCiAgICAiQ1RrRnJhbWUiOiB7CiAgICAgICJjb3JuZXJfcmFkaXVzIjogNiwKICAgICAgImJvcmRlcl93aWR0aCI6IDAsCiAgICAgICJmZ19jb2xvciI6IFsiZ3JheTIiLCAiZ3JheTIiXSwKICAgICAgInRvcF9mZ19jb2xvciI6IFsiZ3JheTIiLCAiZ3JheTIiXSwKICAgICAgImJvcmRlcl9jb2xvciI6IFsiZ3JheTIiLCAiZ3JheTIiXQogICAgfSwKICAgICJDVGtCdXR0b24iOiB7CiAgICAgICJjb3JuZXJfcmFkaXVzIjogNiwKICAgICAgImJvcmRlcl93aWR0aCI6IDAsCiAgICAgICJmZ19jb2xvciI6IFsiZ3JheTEwIiwgImdyYXkxMCJdLAogICAgICAiaG92ZXJfY29sb3IiOiBbImdyYXk1IiwgImdyYXk1Il0sCiAgICAgICJib3JkZXJfY29sb3IiOiBbImJsYWNrIiwgImJsYWNrIl0sCiAgICAgICJ0ZXh0X2NvbG9yIjogWyJ3aGl0ZSIsICJ3aGl0ZSJdLAogICAgICAidGV4dF9jb2xvcl9kaXNhYmxlZCI6IFsiZ3JheTYwIiwgImdyYXk2MCJdCiAgICB9LAogICAgIkNUa0xhYmVsIjogewogICAgICAiY29ybmVyX3JhZGl1cyI6IDAsCiAgICAgICJmZ19jb2xvciI6ICJ0cmFuc3BhcmVudCIsCiAgICAgICJ0ZXh0X2NvbG9yIjogWyJ3aGl0ZSIsICJ3aGl0ZSJdCiAgICB9LAogICAgIkNUa0VudHJ5IjogewogICAgICAiY29ybmVyX3JhZGl1cyI6IDYsCiAgICAgICJib3JkZXJfd2lkdGgiOiAyLAogICAgICAiZmdfY29sb3IiOiBbImJsYWNrIiwgImJsYWNrIl0sCiAgICAgICJib3JkZXJfY29sb3IiOiBbImJsYWNrIiwgImJsYWNrIl0sCiAgICAgICJ0ZXh0X2NvbG9yIjpbIndoaXRlIiwgIndoaXRlIl0sCiAgICAgICJwbGFjZWhvbGRlcl90ZXh0X2NvbG9yIjogWyJncmF5NjIiLCAiZ3JheTYyIl0KICAgIH0sCiAgICAiQ1RrQ2hlY2tCb3giOiB7CiAgICAgICJjb3JuZXJfcmFkaXVzIjogNiwKICAgICAgImJvcmRlcl93aWR0aCI6IDMsCiAgICAgICJmZ19jb2xvciI6IFsiYmxhY2siLCAiYmxhY2siXSwKICAgICAgImJvcmRlcl9jb2xvciI6IFsiYmxhY2siLCAiYmxhY2siXSwKICAgICAgImhvdmVyX2NvbG9yIjogWyJncmF5IiwgImdyYXkiXSwKICAgICAgImNoZWNrbWFya19jb2xvciI6IFsid2hpdGUiLCAid2hpdGUiXSwKICAgICAgInRleHRfY29sb3IiOiBbIndoaXRlIiwgIndoaXRlIl0sCiAgICAgICJ0ZXh0X2NvbG9yX2Rpc2FibGVkIjogWyJncmF5NDUiLCAiZ3JheTQ1Il0KICAgIH0sCiAgICAiQ1RrU3dpdGNoIjogewogICAgICAiY29ybmVyX3JhZGl1cyI6IDEwMDAsCiAgICAgICJib3JkZXJfd2lkdGgiOiAzLAogICAgICAiYnV0dG9uX2xlbmd0aCI6IDAsCiAgICAgICJmZ19jb2xvciI6IFsicmVkIiwgInJlZCJdLAogICAgICAicHJvZ3Jlc3NfY29sb3IiOiBbImdyZWVuIiwgImdyZWVuIl0sCiAgICAgICJidXR0b25fY29sb3IiOiBbImdyYXkxNSIsICJncmF5MTUiXSwKICAgICAgImJ1dHRvbl9ob3Zlcl9jb2xvciI6IFsiZ3JheTEwIiwgImdyYXkxMCJdLAogICAgICAidGV4dF9jb2xvciI6IFsid2hpdGUiLCAid2hpdGUiXSwKICAgICAgInRleHRfY29sb3JfZGlzYWJsZWQiOiBbImdyYXk0NSIsICJncmF5NDUiXQogICAgfSwKICAgICJDVGtSYWRpb0J1dHRvbiI6IHsKICAgICAgImNvcm5lcl9yYWRpdXMiOiAxMDAwLAogICAgICAiYm9yZGVyX3dpZHRoX2NoZWNrZWQiOiA2LAogICAgICAiYm9yZGVyX3dpZHRoX3VuY2hlY2tlZCI6IDMsCiAgICAgICJmZ19jb2xvciI6IFsiYmxhY2siLCAiYmxhY2siXSwKICAgICAgImJvcmRlcl9jb2xvciI6IFsiYmxhY2siLCAiYmxhY2siXSwKICAgICAgImhvdmVyX2NvbG9yIjogWyJncmF5IiwgImdyYXkiXSwKICAgICAgInRleHRfY29sb3IiOiBbIndoaXRlIiwgIndoaXRlIl0sCiAgICAgICJ0ZXh0X2NvbG9yX2Rpc2FibGVkIjogWyJncmF5NDUiLCAiZ3JheTQ1Il0KICAgIH0sCiAgICAiQ1RrUHJvZ3Jlc3NCYXIiOiB7CiAgICAgICJjb3JuZXJfcmFkaXVzIjogMTAwMCwKICAgICAgImJvcmRlcl93aWR0aCI6IDAsCiAgICAgICJmZ19jb2xvciI6IFsiZ3JheSIsICJncmF5Il0sCiAgICAgICJwcm9ncmVzc19jb2xvciI6IFsiYmxhY2siLCAiYmxhY2siXSwKICAgICAgImJvcmRlcl9jb2xvciI6IFsiZ3JheSIsICJncmF5Il0KICAgIH0sCiAgICAiQ1RrU2xpZGVyIjogewogICAgICAiY29ybmVyX3JhZGl1cyI6IDEwMDAsCiAgICAgICJidXR0b25fY29ybmVyX3JhZGl1cyI6IDEwMDAsCiAgICAgICJib3JkZXJfd2lkdGgiOiA2LAogICAgICAiYnV0dG9uX2xlbmd0aCI6IDAsCiAgICAgICJmZ19jb2xvciI6IFsiZ3JheTI1IiwgImdyYXkyNSJdLAogICAgICAicHJvZ3Jlc3NfY29sb3IiOiBbImdyYXkxMCIsICJncmF5MTAiXSwKICAgICAgImJ1dHRvbl9jb2xvciI6IFsiZ3JheTEwIiwgImdyYXkxMCJdLAogICAgICAiYnV0dG9uX2hvdmVyX2NvbG9yIjogWyJncmF5MjAiLCAiZ3JheTIwIl0KICAgIH0sCiAgICAiQ1RrT3B0aW9uTWVudSI6IHsKICAgICAgImNvcm5lcl9yYWRpdXMiOiA2LAogICAgICAiZmdfY29sb3IiOiBbImJsYWNrIiwgImJsYWNrIl0sCiAgICAgICJidXR0b25fY29sb3IiOiBbImdyYXkxMCIsICJncmF5MTAiXSwKICAgICAgImJ1dHRvbl9ob3Zlcl9jb2xvciI6IFsiZ3JheTE1IiwgImdyYXkxNSJdLAogICAgICAidGV4dF9jb2xvciI6IFsid2hpdGUiLCAid2hpdGUiXSwKICAgICAgInRleHRfY29sb3JfZGlzYWJsZWQiOiBbImdyYXk2MCIsICJncmF5NjAiXQogICAgfSwKICAgICJDVGtDb21ib0JveCI6IHsKICAgICAgImNvcm5lcl9yYWRpdXMiOiA2LAogICAgICAiYm9yZGVyX3dpZHRoIjogMiwKICAgICAgImZnX2NvbG9yIjogWyJibGFjayIsICJibGFjayJdLAogICAgICAiYm9yZGVyX2NvbG9yIjogWyJibGFjayIsICJibGFjayJdLAogICAgICAiYnV0dG9uX2NvbG9yIjogWyJibGFjayIsICJibGFjayJdLAogICAgICAiYnV0dG9uX2hvdmVyX2NvbG9yIjogWyJncmF5NDEiLCAiZ3JheTQxIl0sCiAgICAgICJ0ZXh0X2NvbG9yIjogWyJ3aGl0ZSIsICJ3aGl0ZSJdLAogICAgICAidGV4dF9jb2xvcl9kaXNhYmxlZCI6IFsiZ3JheTQ1IiwgImdyYXk0NSJdCiAgICB9LAogICAgIkNUa1Njcm9sbGJhciI6IHsKICAgICAgImNvcm5lcl9yYWRpdXMiOiAxMDAwLAogICAgICAiYm9yZGVyX3NwYWNpbmciOiA0LAogICAgICAiZmdfY29sb3IiOiAidHJhbnNwYXJlbnQiLAogICAgICAiYnV0dG9uX2NvbG9yIjogWyJncmF5IiwgImdyYXkiXSwKICAgICAgImJ1dHRvbl9ob3Zlcl9jb2xvciI6IFsiZ3JheTEwMCIsICJncmF5MTAwIl0KICAgIH0sCiAgICAiQ1RrU2VnbWVudGVkQnV0dG9uIjogewogICAgICAiY29ybmVyX3JhZGl1cyI6IDYsCiAgICAgICJib3JkZXJfd2lkdGgiOiAyLAogICAgICAiZmdfY29sb3IiOiBbImJsYWNrIiwgImJsYWNrIl0sCiAgICAgICJzZWxlY3RlZF9jb2xvciI6IFsid2hpdGUiLCAid2hpdGUiXSwKICAgICAgInNlbGVjdGVkX2hvdmVyX2NvbG9yIjogWyJncmF5MTAwIiwgImdyYXkxMDAiXSwKICAgICAgInVuc2VsZWN0ZWRfY29sb3IiOiBbImJsYWNrIiwgImJsYWNrIl0sCiAgICAgICJ1bnNlbGVjdGVkX2hvdmVyX2NvbG9yIjogWyJncmF5IiwgImdyYXkiXSwKICAgICAgInRleHRfY29sb3IiOiBbIndoaXRlIiwgIndoaXRlIl0sCiAgICAgICJ0ZXh0X2NvbG9yX2Rpc2FibGVkIjogWyJncmF5NjAiLCAiZ3JheTYwIl0KICAgIH0sCiAgICAiQ1RrVGV4dGJveCI6IHsKICAgICAgImNvcm5lcl9yYWRpdXMiOiA2LAogICAgICAiYm9yZGVyX3dpZHRoIjogMCwKICAgICAgImZnX2NvbG9yIjogWyJibGFjayIsICJibGFjayJdLAogICAgICAiYm9yZGVyX2NvbG9yIjogWyJibGFjayIsICJibGFjayJdLAogICAgICAidGV4dF9jb2xvciI6WyJ3aGl0ZSIsICJ3aGl0ZSJdLAogICAgICAic2Nyb2xsYmFyX2J1dHRvbl9jb2xvciI6IFsiZ3JheSIsICJncmF5Il0sCiAgICAgICJzY3JvbGxiYXJfYnV0dG9uX2hvdmVyX2NvbG9yIjogWyJncmF5MTAwIiwgImdyYXkxMDAiXQogICAgfSwKICAgICJDVGtTY3JvbGxhYmxlRnJhbWUiOiB7CiAgICAgICJsYWJlbF9mZ19jb2xvciI6IFsiZ3JheTIzIiwgImdyYXkyMyJdCiAgICB9LAogICAgIkRyb3Bkb3duTWVudSI6IHsKICAgICAgImZnX2NvbG9yIjogWyJibGFjayIsICJibGFjayJdLAogICAgICAiaG92ZXJfY29sb3IiOiBbImdyYXkiLCAiZ3JheSJdLAogICAgICAidGV4dF9jb2xvciI6IFsid2hpdGUiLCAid2hpdGUiXQogICAgfSwKICAgICJDVGtGb250IjogewogICAgICAibWFjT1MiOiB7CiAgICAgICAgImZhbWlseSI6ICJTRiBEaXNwbGF5IiwKICAgICAgICAic2l6ZSI6IDEzLAogICAgICAgICJ3ZWlnaHQiOiAibm9ybWFsIgogICAgICB9LAogICAgICAiV2luZG93cyI6IHsKICAgICAgICAiZmFtaWx5IjogIkNvbnNvbGFzIiwKICAgICAgICAic2l6ZSI6IDE0LAogICAgICAgICJ3ZWlnaHQiOiAibm9ybWFsIgogICAgICB9LAogICAgICAiTGludXgiOiB7CiAgICAgICAgImZhbWlseSI6ICJSb2JvdG8iLAogICAgICAgICJzaXplIjogMTMsCiAgICAgICAgIndlaWdodCI6ICJub3JtYWwiCiAgICAgIH0KICAgIH0KICB9CiAgCg=="
+        themejs = "./assets/theme.json"
 
         
         theme_json = base64.b64decode(theme_base64).decode('utf-8')
@@ -122,6 +123,7 @@ class App(customtkinter.CTk):
             themejsfile.write(theme_json.encode('utf-8'))
             themejs = themejsfile.name
 
+        #customtkinter.set_default_color_theme("./assets/theme.json")
         customtkinter.set_default_color_theme(themejs)
 
         consolas_font = customtkinter.CTkFont(size=14, weight="bold", family="Consolas")
@@ -177,21 +179,21 @@ class App(customtkinter.CTk):
 
         self.home_button = customtkinter.CTkButton(
             self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="MIDI Player",
-            fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray7", "gray7"),
+            fg_color="transparent", text_color=("gray90", "gray90"), hover_color=("gray7", "gray7"),
             image=self.pianoimage, anchor="w", font=consolas_font, command=self.home_button_event
         )
         self.home_button.grid(row=1, column=0, sticky="ew")
 
         self.midi_hub = customtkinter.CTkButton(
             self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="MIDI Hub",
-            fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray7", "gray7"),
+            fg_color="transparent", text_color=("gray90", "gray90"), hover_color=("gray7", "gray7"),
             image=self.pianoimage, anchor="w", font=consolas_font, command=self.midi_hub_event
         )
         self.midi_hub.grid(row=2, column=0, sticky="ew")
 
         self.settings_tab = customtkinter.CTkButton(
             self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Settings",
-            fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray7", "gray7"),
+            fg_color="transparent", text_color=("gray90", "gray90"), hover_color=("gray7", "gray7"),
             image=self.settingsimage, anchor="w", font=consolas_font, command=self.settings_tab_event
         )
         self.settings_tab.grid(row=4, column=0, sticky="ew")
@@ -301,6 +303,11 @@ class App(customtkinter.CTk):
             with open(config_path, 'w') as config_file:
                 json.dump(config_data, config_file, indent=2)
 
+        def switchRandomFail():
+            config_data['randomFail'] = switchRandomFailvar.get() == "on"
+            with open(config_path, 'w') as config_file:
+                json.dump(config_data, config_file, indent=2)
+
         def switchConsole():
             config_data['console'] = switchConsolevar.get() == "on"
             with open(config_path, 'w') as config_file:
@@ -345,7 +352,8 @@ class App(customtkinter.CTk):
         switchConsolevar = customtkinter.StringVar(value="off")
         switchTopmostvar = customtkinter.StringVar(value="off")
         switchTimestampvar = customtkinter.StringVar(value="off")
-
+        switchRandomFailvar = customtkinter.StringVar(value="off")
+        
         self.midi_port_lock = threading.Lock()
 
         switchUseMIDIvar.set("on" if config_data.get('useMIDI', False) else "off")
@@ -356,6 +364,7 @@ class App(customtkinter.CTk):
         switchConsolevar.set("on" if config_data.get('console', False) else "off")
         switchTopmostvar.set("on" if config_data.get('topMost', False) else "off")
         switchTimestampvar.set("on" if config_data.get('timestamp', False) else "off")
+        switchRandomFailvar.set("on" if config_data.get('randomFail', False) else "off")
         
         # MIDI
         self.home_frame = customtkinter.CTkFrame(self.master, corner_radius=0, fg_color="#0A0A0A")
@@ -391,7 +400,13 @@ class App(customtkinter.CTk):
         )
         self.home_frame_label_2.grid(row=2, column=0, padx=(0,200), pady=(10, 0))
 
-        self.home_frame_entry_1 = customtkinter.CTkEntry(self.home_frame, width=350, placeholder_text="/midi.mid")
+        def switchMIDIEvent(event=None):
+            self.start_listener()
+            config_data["midiFile"] = self.home_frame_entry_1.get()
+            with open(config_path, 'w') as file:
+                json.dump(config_data, file, indent=2)
+
+        self.home_frame_entry_1 = customtkinter.CTkOptionMenu(self.home_frame, width=350, values="", command=switchMIDIEvent)
         self.home_frame_entry_1.grid(row=3, column=0, padx=20, pady=(10, 0))
 
         self.select_file_button = customtkinter.CTkButton(
@@ -530,7 +545,7 @@ class App(customtkinter.CTk):
         self.settings_tab_frame_label_performance = customtkinter.CTkLabel(
             self.settings_tab_frame, text="Performance", fg_color="transparent", font=customtkinter.CTkFont(size=20, weight="bold", family="Consolas")
         )
-        self.settings_tab_frame_label_performance.grid(row=0, column=0, padx=(10, 0), pady=(5, 10), sticky="w")
+        self.settings_tab_frame_label_performance.grid(row=0, column=0, padx=(10, 0), pady=(15, 0), sticky="w")
 
         self.settings_tab_frame_label_toggle_timestamp = customtkinter.CTkSwitch(
             self.settings_tab_frame, text="Timestamp", command=switchTimestamp, variable=switchTimestampvar, font=consolas_font, onvalue="on", offvalue="off"
@@ -540,36 +555,36 @@ class App(customtkinter.CTk):
         self.settings_tab_frame_open_ex_con = customtkinter.CTkButton(
             self.settings_tab_frame, text="Open Debug\nConsole", width=120, command=self.create_debug_console, font=consolas_font
         )
-        self.settings_tab_frame_open_ex_con.grid(row=1, column=0, padx=(270, 0), pady=(5, 5), sticky="w")
+        self.settings_tab_frame_open_ex_con.grid(row=0, column=0, padx=(160, 0), pady=(14, 0), sticky="w")
 
         self.settings_tab_frame_close_ex_con = customtkinter.CTkButton(
             self.settings_tab_frame, text="Close Debug\nConsole", width=120, command=self.close_debug_console, font=consolas_font
         )
-        self.settings_tab_frame_close_ex_con.grid(row=2, column=0, padx=(270, 0), pady=(5, 5), sticky="w")
+        self.settings_tab_frame_close_ex_con.grid(row=0, column=0, padx=(290, 0), pady=(14, 0), sticky="w")
 
         self.settings_tab_frame_label_toggle_topmost = customtkinter.CTkSwitch(
             self.settings_tab_frame, text="Topmost", command=switchTopmost, variable=switchTopmostvar, font=consolas_font, onvalue="on", offvalue="off"
         )
-        self.settings_tab_frame_label_toggle_topmost.grid(row=3, column=0, padx=(270, 0), pady=(0, 0), sticky="w")
+        self.settings_tab_frame_label_toggle_topmost.grid(row=1, column=0, padx=(155, 0), pady=(30, 0), sticky="nw")
 
         self.settings_tab_frame_label_toggle_decreaselabel = customtkinter.CTkLabel(
             self.settings_tab_frame, text="Decrease Size", fg_color="transparent", font=consolas_font
         )
-        self.settings_tab_frame_label_toggle_decreaselabel.grid(row=4, column=0, padx=(85,0), pady=(10, 0), sticky="s")
+        self.settings_tab_frame_label_toggle_decreaselabel.grid(row=1, column=0, padx=(85,0), pady=(9, 0), sticky="n")
 
         self.settings_tab_frame_label_toggle_changedecrease = customtkinter.CTkSlider(self.settings_tab_frame, from_=1, to=100, width=125, command=self.sliderupdate_decreaseSize)
-        self.settings_tab_frame_label_toggle_changedecrease.grid(row=6, column=0, padx=(85,0), pady=(0, 20))
+        self.settings_tab_frame_label_toggle_changedecrease.grid(row=2, column=0, padx=(85,0), pady=(5, 0), sticky="n")
         self.settings_tab_frame_label_toggle_changedecrease.set(config_data['decreaseSize'])
 
         self.settings_tab_frame_label_toggle_resetdecrease = customtkinter.CTkButton(
             self.settings_tab_frame, image=self.reset_image, text="", width=30, command=self.resetvalue_decreaseSize, font=consolas_font
         )
-        self.settings_tab_frame_label_toggle_resetdecrease.grid(row=5, column=0, padx=(140, 0), pady=(0, 4))
+        self.settings_tab_frame_label_toggle_resetdecrease.grid(row=1, column=0, padx=(140, 0), pady=(35, 0))
 
         self.settings_tab_frame_label_toggle_decreaseentry = customtkinter.CTkEntry(
             self.settings_tab_frame, placeholder_text="10", width=50, fg_color="transparent", font=consolas_font
         )
-        self.settings_tab_frame_label_toggle_decreaseentry.grid(row=5, column=0, padx=(50,0), pady=(0, 5), sticky="s")
+        self.settings_tab_frame_label_toggle_decreaseentry.grid(row=1, column=0, padx=(50,0), pady=(35, 0))
         self.settings_tab_frame_label_toggle_decreaseentry.insert(0, config_data['decreaseSize'])
 
         self.settings_tab_frame_label_toggle_decreaseentry.bind("<FocusOut>", self.slidertoentry_decreaseSize)
@@ -579,39 +594,44 @@ class App(customtkinter.CTk):
         self.settings_tab_frame_label_toggle_console = customtkinter.CTkSwitch(
             self.settings_tab_frame, text="Console", command=switchConsole, variable=switchConsolevar, font=consolas_font, onvalue="on", offvalue="off"
         )
-        self.settings_tab_frame_label_toggle_console.grid(row=1, column=0, padx=(20, 0), pady=(0, 40), sticky="sw")
+        self.settings_tab_frame_label_toggle_console.grid(row=1, column=0, padx=(20, 0), pady=(0, 0), sticky="nw")
 
         self.settings_tab_frame_label_qwerty = customtkinter.CTkLabel(
             self.settings_tab_frame, text="QWERTY Settings", fg_color="transparent", font=customtkinter.CTkFont(size=20, weight="bold", family="Consolas")
         )
-        self.settings_tab_frame_label_qwerty.grid(row=3, column=0, padx=(10, 0), pady=(0, 0), sticky="w")
+        self.settings_tab_frame_label_qwerty.grid(row=2, column=0, padx=(10, 0), pady=(10, 0), sticky="w")
 
         self.settings_tab_frame_label_toggle_sustain = customtkinter.CTkSwitch(
             self.settings_tab_frame, text="Sustain", command=switchSustain, variable=switchSustainvar, font=consolas_font, onvalue="on", offvalue="off"
         )
-        self.settings_tab_frame_label_toggle_sustain.grid(row=4, column=0, padx=(20, 0), pady=(5, 5), sticky="w")
+        self.settings_tab_frame_label_toggle_sustain.grid(row=3, column=0, padx=(20, 0), pady=(5, 0), sticky="w")
 
         self.settings_tab_frame_label_toggle_nodoubles = customtkinter.CTkSwitch(
             self.settings_tab_frame, text="No Doubles", command=switchNoDoubles, variable=switchNoDoublesvar, font=consolas_font, onvalue="on", offvalue="off"
         )
-        self.settings_tab_frame_label_toggle_nodoubles.grid(row=5, column=0, padx=(20, 0), pady=(5, 5), sticky="w")
+        self.settings_tab_frame_label_toggle_nodoubles.grid(row=4, column=0, padx=(20, 0), pady=(5, 0), sticky="w")
 
         self.settings_tab_frame_label_toggle_velocity = customtkinter.CTkSwitch(
             self.settings_tab_frame, text="Velocity", command=switchVelocity, variable=switchVelocityvar, font=consolas_font, onvalue="on", offvalue="off"
         )
-        self.settings_tab_frame_label_toggle_velocity.grid(row=6, column=0, padx=(20, 0), pady=(5, 5), sticky="w")
+        self.settings_tab_frame_label_toggle_velocity.grid(row=5, column=0, padx=(20, 0), pady=(5, 0), sticky="nw")
 
         self.settings_tab_frame_label_toggle_88keys = customtkinter.CTkSwitch(
             self.settings_tab_frame, text="88 Keys", command=switch88Keys, variable=switch88Keysvar, font=consolas_font, onvalue="on", offvalue="off"
         )
-        self.settings_tab_frame_label_toggle_88keys.grid(row=7, column=0, padx=(20, 0), pady=(5, 5), sticky="w")
+        self.settings_tab_frame_label_toggle_88keys.grid(row=5, column=0, padx=(20, 0), pady=(35, 0), sticky="nw")
+
+        self.settings_tab_frame_close_ex_con = customtkinter.CTkButton(
+            self.settings_tab_frame, text="Clear MIDI\nList", width=100, command=self.clearMIDI, font=consolas_font
+        )
+        self.settings_tab_frame_close_ex_con.grid(row=6, column=0, padx=(20, 0), pady=(10, 0), sticky="nw")
 
         # SETTINGS > HOTKEYS
 
         self.settings_tab_frame_label_hotkey = customtkinter.CTkLabel(
             self.settings_tab_frame, text="Hotkey Settings", fg_color="transparent", font=customtkinter.CTkFont(size=20, weight="bold", family="Consolas")
         )
-        self.settings_tab_frame_label_hotkey.grid(row=8, column=0, padx=(10, 0), pady=(20, 0), sticky="w")
+        self.settings_tab_frame_label_hotkey.grid(row=8, column=0, padx=(10, 0), pady=(10, 0), sticky="w")
 
         self.settings_tab_frame_label_play = customtkinter.CTkLabel(
             self.settings_tab_frame, text="Play", fg_color="transparent", font=consolas_font
@@ -668,6 +688,63 @@ class App(customtkinter.CTk):
         )
         self.settings_tab_frame_slow_hotkey.grid(row=10, column=0, padx=(337, 165), pady=(0, 5), sticky="w")
 
+        self.settings_tab_randomfail = customtkinter.CTkLabel(
+            self.settings_tab_frame, text="Miscellaneous", fg_color="transparent", font=customtkinter.CTkFont(size=20, weight="bold", family="Consolas")
+        )
+        self.settings_tab_randomfail.grid(row=5, column=0, padx=(85,0), pady=(0, 0), sticky="n")
+
+        self.settings_tab_frame_label_toggle_randomFail = customtkinter.CTkSwitch(
+            self.settings_tab_frame, text="Random Fail", command=switchRandomFail, variable=switchRandomFailvar, font=consolas_font, onvalue="on", offvalue="off"
+        )
+        self.settings_tab_frame_label_toggle_randomFail.grid(row=5, column=0, padx=(85,0), pady=(0, 0), sticky="s")
+
+        self.settings_tab_frame_failspeedprclvl = customtkinter.CTkLabel(
+            self.settings_tab_frame, text="Speed Fail %", fg_color="transparent", font=consolas_font
+        )
+        self.settings_tab_frame_failspeedprclvl.grid(row=6, column=0, padx=(150,0), pady=(0, 0), sticky="nw")
+
+        self.settings_tab_frame_speedfailspeedprcslider = customtkinter.CTkSlider(self.settings_tab_frame, from_=1, to=100, width=125, command=self.sliderupdate_failspeedprc)
+        self.settings_tab_frame_speedfailspeedprcslider.grid(row=7, column=0, padx=(140,0), pady=(5, 0), sticky="nw")
+        self.settings_tab_frame_speedfailspeedprcslider.set(config_data['failType']['speed'])
+
+        self.settings_tab_frame_failspeedprcreset = customtkinter.CTkButton(
+            self.settings_tab_frame, image=self.reset_image, text="", width=30, command=self.resetvalue_failspeedprc, font=consolas_font
+        )
+        self.settings_tab_frame_failspeedprcreset.grid(row=6, column=0, padx=(210, 0), pady=(25, 0), sticky="nw")
+
+        self.settings_tab_frame_failspeedprcint = customtkinter.CTkEntry(
+            self.settings_tab_frame, placeholder_text="10", width=50, fg_color="transparent", font=consolas_font
+        )
+        self.settings_tab_frame_failspeedprcint.grid(row=6, column=0, padx=(155,0), pady=(25, 0), sticky="nw")
+        self.settings_tab_frame_failspeedprcint.insert(0, config_data['failType']['speed'])
+
+        self.settings_tab_frame_failspeedprcint.bind("<FocusOut>", self.slidertoentry_failspeedprc)
+        self.settings_tab_frame_failspeedprcint.bind("<KeyRelease>", self.slidertoentry_failspeedprc)
+        self.settings_tab_frame_speedfailspeedprcslider.bind("<ButtonRelease-1>", self.entrytoslider_failspeedprc)
+
+        self.settings_tab_frame_trpsprclvl = customtkinter.CTkLabel(
+            self.settings_tab_frame, text="Transpose Fail %", fg_color="transparent", font=consolas_font
+        )
+        self.settings_tab_frame_trpsprclvl.grid(row=6, column=0, padx=(85,0), pady=(0, 0), sticky="n")
+
+        self.settings_tab_frame_trpsprcslider = customtkinter.CTkSlider(self.settings_tab_frame, from_=1, to=100, width=125, command=self.sliderupdate_TrpsInt)
+        self.settings_tab_frame_trpsprcslider.grid(row=7, column=0, padx=(85,0), pady=(5, 0), sticky="n")
+        self.settings_tab_frame_trpsprcslider.set(config_data['failType']['transpose'])
+
+        self.settings_tab_frame_toggle_trpsprcreset = customtkinter.CTkButton(
+            self.settings_tab_frame, image=self.reset_image, text="", width=30, command=self.resetvalue_TrpsInt, font=consolas_font
+        )
+        self.settings_tab_frame_toggle_trpsprcreset.grid(row=6, column=0, padx=(140, 0), pady=(25, 0))
+
+        self.settings_tab_frame_toggle_trpsprcint = customtkinter.CTkEntry(
+            self.settings_tab_frame, placeholder_text="10", width=50, fg_color="transparent", font=consolas_font
+        )
+        self.settings_tab_frame_toggle_trpsprcint.grid(row=6, column=0, padx=(50,0), pady=(25, 0))
+        self.settings_tab_frame_toggle_trpsprcint.insert(0, config_data['failType']['transpose'])
+
+        self.settings_tab_frame_toggle_trpsprcint.bind("<FocusOut>", self.slidertoentry_TrpsInt)
+        self.settings_tab_frame_toggle_trpsprcint.bind("<KeyRelease>", self.slidertoentry_TrpsInt)
+        self.settings_tab_frame_trpsprcslider.bind("<ButtonRelease-1>", self.entrytoslider_TrpsInt)
 
         # MIDI HUB
 
@@ -705,6 +782,30 @@ class App(customtkinter.CTk):
 
         # END
 
+        added = config_data.get('addedMIDI', [])
+    
+        midiDIR = [
+            os.path.join("./Midis", file)
+            for file in os.listdir("./Midis")
+            if file.endswith('.mid') or file.endswith('.midi')
+        ]
+
+        allMidis = added + midiDIR
+
+        currentVAL = list(self.home_frame_entry_1.cget("values"))
+
+        uniqueMIDI = set(currentVAL + allMidis)
+        currentVAL = list(uniqueMIDI)
+
+        self.home_frame_entry_1.configure(values=currentVAL)
+
+        if currentVAL:
+            self.home_frame_entry_1.configure(values=currentVAL)
+            self.home_frame_entry_1.set(currentVAL[0])
+        else:
+            self.home_frame_entry_1.configure(values=[])
+            self.home_frame_entry_1.set('')
+
         def destroyMessage():
             self.warning.destroy()
         
@@ -734,6 +835,11 @@ class App(customtkinter.CTk):
         self.select_frame_by_name("home")
         self.hasMIDI()
         self.useMIDIStatus()
+
+    def clearMIDI(self, event=None):
+        config_data["addedMIDI"] = []
+        with open(config_path, 'w') as file:
+            json.dump(config_data, file, indent=2)
 
     def searchButton(self, event=None):
         self.filter_midi_data(event)
@@ -819,27 +925,42 @@ class App(customtkinter.CTk):
         filename = url.split("/")[-1]
         filepath = os.path.join(self.download_folder, filename)
         config_data['midiFile'] = filepath
-        self.home_frame_entry_1.delete(0, "end")
-        self.home_frame_entry_1.insert(0, filepath)
+
         with open(config_path, 'w') as config_file:
             json.dump(config_data, config_file, indent=2)
+
         with open(filepath, "wb") as f:
             f.write(response.content)
+
+        self.listener.stop()
         self.stop_playback()
+
+        current_values = list(self.home_frame_entry_1.cget("values"))
+
+        if filepath not in current_values:
+            current_values.append(filepath)
+            self.home_frame_entry_1.configure(values=current_values)
+
+        self.home_frame_entry_1.set(filepath)
+
         self.select_frame_by_name("home")
 
         midi_file = MidiFile(filepath)
         self.total_time = midi_file.length
 
-        self.timelineTextLoadMIDI = f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}" if config_data['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(self.total_time)))}"
+        self.timelineTextLoadMIDI = (
+            f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}"
+            if config_data['timestamp']
+            else f"X:XX:XX / {str(datetime.timedelta(seconds=int(self.total_time)))}"
+        )
 
         self.timeline.configure(text=self.timelineTextLoadMIDI)
-        threading.Thread(target=app.consolekl_text_insert, args=(f"Downloaded!",)).start()
+
+        threading.Thread(target=app.consolekl_text_insert, args=("Downloaded!",)).start()
         threading.Thread(target=app.consolekl_text_insert, args=(filename,)).start()
-        
-        self.timeline.configure(text=self.timelineTextLoadMIDI)
 
-        self.set_hotkeys()
+        self.start_listener()
+
 
     def midi_hub_footer(self):
         pagination_frame = customtkinter.CTkFrame(master=self.midi_hub_frame)
@@ -874,7 +995,7 @@ class App(customtkinter.CTk):
         self.current_page = 1
         self.show_page(self.current_page)
 
-    def start_listener(self):
+    def start_listener(self, event=None):
         if self.listener:
             self.listener.stop()
         self.listener = Listener(on_press=self.on_key_press)
@@ -959,15 +1080,22 @@ class App(customtkinter.CTk):
                 clone_label.configure(text="Press Key")
 
     def hasMIDI(self):
-        if not config_data.get('midiFile') == "":
-            self.home_frame_entry_1.insert(0, config_data.get('midiFile'))
+        midi_file = config_data.get('midiFile')
+        if midi_file:
+            currentVAL = list(self.home_frame_entry_1.cget("values"))
+            if midi_file not in currentVAL:
+                currentVAL.append(midi_file)
+                self.home_frame_entry_1.configure(values=currentVAL)
 
-            midifile = MidiFile(config_data.get('midiFile'))
+            self.home_frame_entry_1.set(midi_file)
+
+            midifile = MidiFile(midi_file)
             self.total_time = midifile.length
             self.timelineTextLoadMIDI = f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}" if config_data['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(self.total_time)))}"
             self.timeline.configure(text=self.timelineTextLoadMIDI)
 
             self.set_hotkeys()
+
 
     def set_hotkeys(self):
         self.hotkeys['play'] = config_data.get('playHotkey')
@@ -1068,6 +1196,82 @@ class App(customtkinter.CTk):
         self.settings_tab_frame_label_toggle_changedecrease.set(10)
 
         config_data['decreaseSize'] = 10
+        with open(config_path, 'w') as config_file:
+            json.dump(config_data, config_file, indent=2)
+
+    def slidertoentry_TrpsInt(self, event=None):
+        try:
+            value = int(float(self.settings_tab_frame_toggle_trpsprcint.get()))
+            if 5 <= value <= 100:
+                self.settings_tab_frame_trpsprcslider.set(value)
+                config_data['failType']['transpose'] = value
+                with open(config_path, 'w') as config_file:
+                    json.dump(config_data, config_file, indent=2)
+        except ValueError:
+            pass
+
+    def sliderupdate_TrpsInt(self, value):
+        rounded_value = int(round(float(value)))
+        self.settings_tab_frame_toggle_trpsprcint.delete(0, "end")
+        self.settings_tab_frame_toggle_trpsprcint.insert(0, str(rounded_value))
+
+        config_data['failType']['transpose'] = rounded_value
+        with open(config_path, 'w') as config_file:
+            json.dump(config_data, config_file, indent=2)
+
+    def entrytoslider_TrpsInt(self, event):
+        value = int(self.settings_tab_frame_trpsprcslider.get())
+        self.settings_tab_frame_toggle_trpsprcint.delete(0, "end")
+        self.settings_tab_frame_toggle_trpsprcint.insert(0, str(value))
+
+        config_data['failType']['transpose'] = value
+        with open(config_path, 'w') as config_file:
+            json.dump(config_data, config_file, indent=2)
+
+    def resetvalue_TrpsInt(self):
+        self.settings_tab_frame_toggle_trpsprcint.delete(0, "end")
+        self.settings_tab_frame_toggle_trpsprcint.insert(0, "30")
+        self.settings_tab_frame_trpsprcslider.set(30)
+
+        config_data['failType']['transpose'] = 30
+        with open(config_path, 'w') as config_file:
+            json.dump(config_data, config_file, indent=2)
+
+    def slidertoentry_failspeedprc(self, event=None):
+        try:
+            value = int(float(self.settings_tab_frame_failspeedprcint.get()))
+            if 5 <= value <= 100:
+                self.settings_tab_frame_speedfailspeedprcslider.set(value)
+                config_data['failType']['speed'] = value
+                with open(config_path, 'w') as config_file:
+                    json.dump(config_data, config_file, indent=2)
+        except ValueError:
+            pass
+
+    def sliderupdate_failspeedprc(self, value):
+        rounded_value = int(round(float(value)))
+        self.settings_tab_frame_failspeedprcint.delete(0, "end")
+        self.settings_tab_frame_failspeedprcint.insert(0, str(rounded_value))
+
+        config_data['failType']['speed'] = rounded_value
+        with open(config_path, 'w') as config_file:
+            json.dump(config_data, config_file, indent=2)
+
+    def entrytoslider_failspeedprc(self, event):
+        value = int(self.settings_tab_frame_speedfailspeedprcslider.get())
+        self.settings_tab_frame_failspeedprcint.delete(0, "end")
+        self.settings_tab_frame_failspeedprcint.insert(0, str(value))
+
+        config_data['failType']['speed'] = value
+        with open(config_path, 'w') as config_file:
+            json.dump(config_data, config_file, indent=2)
+
+    def resetvalue_failspeedprc(self):
+        self.settings_tab_frame_failspeedprcint.delete(0, "end")
+        self.settings_tab_frame_failspeedprcint.insert(0, "70")
+        self.settings_tab_frame_speedfailspeedprcslider.set(70)
+
+        config_data['failType']['speed'] = 70
         with open(config_path, 'w') as config_file:
             json.dump(config_data, config_file, indent=2)
 
@@ -1221,15 +1425,14 @@ class App(customtkinter.CTk):
                     threading.Thread(target=app.consolekl_text_insert, args=(f"{log_message}",)).start()
 
             def parse_midi(message):
-                
                 if message.type == "control_change" and SavableSettings["sustainEnabled"]:
                     if not self.sustainToggle or message.value > SavableSettings["sustainCutoff"]:
                         self.sustainToggle = True
-                        self.keyboard_controller.press("space")
+                        self.keyboard_controller.press(Key.space)
                         print("press: space (sustain on)")
                     elif self.sustainToggle and message.value < SavableSettings["sustainCutoff"]:
                         self.sustainToggle = False
-                        self.keyboard_controller.release("space")
+                        self.keyboard_controller.release(Key.space)
                         print("release: space (sustain off)")
                 else:
                     if message.type == "note_on" or message.type == "note_off":
@@ -1267,7 +1470,20 @@ class App(customtkinter.CTk):
                     for msg in mid:
                         self.pause_event.wait()
                         elapsed_time = time.time() - start_time
-                        time.sleep(msg.time * (100 / self.playback_speed))
+
+                        if config_data.get("randomFail"):
+                            if random.random() < config_data["failType"]["speed"] / 100:
+                                playback_speed_factor = random.uniform(0.5, 1.5)
+                                time.sleep(msg.time * (100 / self.playback_speed) * playback_speed_factor)
+                            elif random.random() < config_data["failType"]["transpose"] / 100:
+                                if hasattr(msg, 'note'):
+                                    msg.note += random.randint(-12, 12)
+                                    time.sleep(msg.time * (100 / self.playback_speed))
+                            else:
+                                time.sleep(msg.time * (100 / self.playback_speed))
+                        else:
+                            time.sleep(msg.time * (100 / self.playback_speed))
+
                         parse_midi(msg)
                         
                         if self.CloseThread:
@@ -1341,7 +1557,20 @@ class App(customtkinter.CTk):
                             for msg in mid:
                                 self.pause_event.wait()
                                 elapsed_time = time.time() - start_time
-                                time.sleep(msg.time * (100 / self.playback_speed))
+
+                                if config_data.get("randomFail"):
+                                    if random.random() < config_data["failType"]["speed"] / 100:
+                                        playback_speed_factor = random.uniform(0.5, 1.5)
+                                        time.sleep(msg.time * (100 / self.playback_speed) * playback_speed_factor)
+                                    elif random.random() < config_data["failType"]["transpose"] / 100:
+                                        if hasattr(msg, 'note'):
+                                            msg.note += random.randint(-12, 12)
+                                            time.sleep(msg.time * (100 / self.playback_speed))
+                                    else:
+                                        time.sleep(msg.time * (100 / self.playback_speed))
+                                else:
+                                    time.sleep(msg.time * (100 / self.playback_speed))
+
                                 if msg.type in ['note_on', 'note_off', 'control_change']:
                                     output.send(msg)
 
@@ -1408,6 +1637,9 @@ class App(customtkinter.CTk):
         if self.isRunning:
             self.pause_event.set()
             self.CloseThread = True
+            for key in self.pressed_keys:
+                self.keyboard_controller.release(key)
+            self.pressed_keys.clear()
 
     def speedup_playback(self, event=None):
         self.playback_speed = max(10, self.playback_speed - config_data['decreaseSize'])
@@ -1471,7 +1703,7 @@ class App(customtkinter.CTk):
             self.after(1000, self.update_timeline)
 
     def open_file_dialog(self):
-        self.home_frame_entry_1.delete(0, "end")
+        self.home_frame_entry_1.set("")
         self.stop_playback_flag.set()
         self.playback_state = False
         self.play_button.configure(text="Play")
@@ -1482,21 +1714,32 @@ class App(customtkinter.CTk):
 
         file_path = filedialog.askopenfilename(filetypes=[("MIDI files", "*.mid;*.midi")])
         if file_path:
-            self.home_frame_entry_1.delete(0, "end")
-            self.home_frame_entry_1.insert(0, file_path)
+            currentVAL = list(self.home_frame_entry_1.cget("values"))
+            if file_path not in currentVAL:
+                currentVAL.append(file_path)
+                self.home_frame_entry_1.configure(values=currentVAL)
+
+            self.home_frame_entry_1.set(file_path)
 
             midi_file = MidiFile(file_path)
             self.total_time = midi_file.length
-            self.timelineTextLoadMIDI = f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}" if config_data['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(self.total_time)))}"
+            self.timelineTextLoadMIDI = (
+                f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}"
+                if config_data['timestamp']
+                else f"X:XX:XX / {str(datetime.timedelta(seconds=int(self.total_time)))}"
+            )
             self.timeline.configure(text=self.timelineTextLoadMIDI)
 
             config_data['midiFile'] = file_path
+            if 'addedMIDI' not in config_data:
+                config_data['addedMIDI'] = []
+            if file_path not in config_data['addedMIDI']:
+                config_data['addedMIDI'].append(file_path)
+
             with open(config_path, 'w') as config_file:
                 json.dump(config_data, config_file, indent=2)
 
-            self.set_hotkeys()
-            self.listener = Listener(on_press=self.on_key_press)
-            self.listener.start()
+            self.start_listener()
 
     def select_frame_by_name(self, name):
         self.home_button.configure(fg_color=("gray5", "gray5") if name == "home" else "transparent")

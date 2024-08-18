@@ -1,5 +1,6 @@
 {
-  "midiFile": "",
+  "midiFile": "C:/Users/Zach/Desktop/Piano/Midis/Moonlight_Sonata_3rd_Movement.mid",
+  "addedMIDI": [],
   "useMIDI": false,
   "playHotkey": "F1",
   "pauseHotkey": "F2",
@@ -13,6 +14,12 @@
   "88Keys": true,
   "console": false,
   "timestamp": true,
+  "randomFail": false,
+  "failType": {
+    "failChance": 100,
+    "speed": 70,
+    "transpose": 30
+  },
   "sustainCutoff": 63,
   "decreaseSize": 10
 }

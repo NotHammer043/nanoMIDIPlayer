@@ -3,10 +3,7 @@
 
   
 
-**nanoMIDIPlayer** is a lightweight application for playing MIDI files. It can either simulate QWERTY keys directly or send MIDI directly to Output MIDI Devices.
-
-The MIDI Function is mainly designed for "[LoopBe1](https://nerds.de/data/setuploopbe1.exe)" or "[loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html)"  and "[MIDI to QWERTY](https://github.com/ArijanJ/miditoqwerty/releases/)".
-
+**nanoMIDIPlayer** is a MIDI Player that can either simulate QWERTY keys or send MIDI directly to Output MIDI Devices.
   
 
 ## Showcase
@@ -78,5 +75,6 @@ nanoMIDIPlayer.exe --debug
 - **redxyzxd**
 - **sherben10**
 - **nictiser**
-- **10cryptic**
-- **xaydd**
+- **somecoolname2**
+- **obanaiserpenthashira**
+- **x.bunn**
