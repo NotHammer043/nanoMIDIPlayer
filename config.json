@@ -16,7 +16,6 @@
   "timestamp": true,
   "randomFail": false,
   "failType": {
-    "failChance": 100,
     "speed": 70,
     "transpose": 30
   },
