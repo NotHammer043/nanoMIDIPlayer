@@ -87,3 +87,6 @@ nanoMIDIPlayer.exe --debug
 - **xaydd**
 - **somecoolname2**
 - **obanaiserpenthashira**
+
+
+[![Star History Chart](https://api.star-history.com/svg?repos=NotHammer043/nanoMIDIPlayer&type=Date)](https://star-history.com/#NotHammer043/nanoMIDIPlayer&Date)
