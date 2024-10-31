@@ -20,5 +20,8 @@
     "transpose": 30
   },
   "sustainCutoff": 63,
-  "decreaseSize": 10
+  "decreaseSize": 10,
+  "loopSong": false,
+  "theme": "Light",
+  "useDefaultTheme": true
 }
