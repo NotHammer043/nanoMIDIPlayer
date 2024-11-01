@@ -39,6 +39,9 @@ https://github.com/user-attachments/assets/7a701085-2c07-479b-92ae-fedcfcabe669
 
 **6.** Focus on your Virtual Piano game/app and click **PLAY** (Default Hotkey F1 "*modifiable*")
 
+
+# Why is this program detected as a virus?
+- Open source programs such as this program are commonly detected as viruses because actual malware may be using the same libaries as this one. Getting this software to not get detected as a virus will cost us 300$/year. You can freely check if the code contains any malicious stuff.
   
 
 # Building
