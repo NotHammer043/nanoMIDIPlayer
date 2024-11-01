@@ -17,6 +17,12 @@ https://github.com/NotHammer043/nanoMIDIPlayer/assets/107131733/1b12c130-8a94-40
 https://github.com/user-attachments/assets/84e9d8b1-2f60-41e9-8f5c-078aeadd7ecc
 
 
+# MACOS
+
+
+https://github.com/user-attachments/assets/7a701085-2c07-479b-92ae-fedcfcabe669
+
+
 
 
   
