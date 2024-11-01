@@ -22,5 +22,6 @@
   "sustainCutoff": 63,
   "decreaseSize": 10,
   "loopSong": false,
+  "forceTheme": true,
   "tooltip": true
 }
