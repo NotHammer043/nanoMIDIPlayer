@@ -12,34 +12,36 @@ import base64
 from PIL import Image
 from io import BytesIO
 
-URL = "https://github.com/NotHammer043/nanoMIDIPlayer/releases/latest/download/nanoMIDIPlayer.zip"
+URL = "https://github.com/NotHammer043/nanoMIDIPlayer/releases/latest/download/nanoMIDIPlayer.exe"
+OUTPUT_PATH = "./nanoMIDIPlayer.exe"
 
-def download(url, progress_callback):
+def download(url, output_path, progress_callback):
     response = requests.get(url, stream=True)
     size = int(response.headers.get('content-length', 0))
     downloaded_size = 0
     start_time = time.time()
 
-    stream = BytesIO()
+    with open(output_path, "wb") as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
+            downloaded_size += len(chunk)
+            elapsed_time = time.time() - start_time
 
-    for chunk in response.iter_content(chunk_size=8192):
-        stream.write(chunk)
-        downloaded_size += len(chunk)
-        elapsed_time = time.time() - start_time
-
-        if elapsed_time > 0:
-            speed = (downloaded_size / 1024) / elapsed_time
-        else:
-            speed = 0
-        
-        progress = (downloaded_size / size) * 100
-        progress_callback(progress, speed)
+            if elapsed_time > 0:
+                speed = (downloaded_size / 1024) / elapsed_time
+            else:
+                speed = 0
+            
+            progress = (downloaded_size / size) * 100
+            progress_callback(progress, speed)
     
-    return stream.getvalue()
+    return output_path
 
+"""
 def extract(data, extract_to):
     with zipfile.ZipFile(BytesIO(data)) as zip_file:
         zip_file.extractall(extract_to)
+"""
 
 def update_progress(progress, speed):
     progressBar.update()
@@ -50,9 +52,9 @@ def progress():
     progressVar.set(0)
     progressBar.update()
     
-    file_data = download(URL, update_progress)
+    download(URL, OUTPUT_PATH, update_progress)
     
-    extract(file_data, "./")
+    #extract(file_data, "./")
 
     progressBar.update()
     status.configure(text="Download Complete\nStarting in 2.. 1")
