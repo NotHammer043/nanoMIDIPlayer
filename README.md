@@ -8,13 +8,15 @@
 
 ## Showcase
 
-  
-
-
-https://github.com/NotHammer043/nanoMIDIPlayer/assets/107131733/1b12c130-8a94-40d5-863a-61961f70fa5f
 
 
 https://github.com/user-attachments/assets/84e9d8b1-2f60-41e9-8f5c-078aeadd7ecc
+
+
+# MACOS
+
+
+https://github.com/user-attachments/assets/7a701085-2c07-479b-92ae-fedcfcabe669
 
 
 
@@ -33,6 +35,9 @@ https://github.com/user-attachments/assets/84e9d8b1-2f60-41e9-8f5c-078aeadd7ecc
 
 **6.** Focus on your Virtual Piano game/app and click **PLAY** (Default Hotkey F1 "*modifiable*")
 
+
+# Why is this program detected as a virus?
+- Open source programs such as this program are commonly detected as viruses because actual malware may be using the same libaries as this one. Getting this software to not get detected as a virus will cost us 300$/year. You can freely check if the code contains any malicious stuff.
   
 
 # Building
