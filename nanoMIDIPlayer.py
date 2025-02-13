@@ -28,7 +28,7 @@ from PIL import Image, ImageTk
 from pynput.keyboard import Controller, Key, Listener
 from tkinter import filedialog, Toplevel, LEFT, SOLID, Label
 
-version = "9.69.69"
+version = "B-10.4.20"
 os_name = platform.system()
 
 if os_name == "Darwin":
@@ -65,7 +65,7 @@ class LoadingScreen(tk.Tk):
 
             self.showLogo()
 
-            self.after(3000, self.loadMainApp)
+            self.after(1500, self.loadMainApp)
         else:
             os.makedirs(base_directory, exist_ok=True)
             if not os.path.exists(config_path):
@@ -141,7 +141,7 @@ class LoadingScreen(tk.Tk):
             print("Downloaded Config")
 
     def loadTheme(self):
-        response = requests.get("https://api.nanomidi.net/api/nanomidiplayer/theme")
+        response = requests.get("https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/theme.json")
 
         if response.status_code == 200:
             theme_data = response.json()
@@ -220,18 +220,17 @@ class App(customtkinter.CTk):
             return Image.open(io.BytesIO(data))
 
         self.playback_state = False
-        self.playback_start_time = None
-        self.last_update_time = None
         self.max_log_messages = 4
+        self.max_drumlog_messages = 11
         self.isRunning = False
         self.log_labels = []
         self.sustainToggle = False
         self.CloseThread = False
         self.pause_event = Event()
         self.pause_event.set()
-        self.paused = False
         self.selected_device = None
         self.midi_file_path = None
+        self.drums_midi_file_path = None
         self.hasUpdated = False
         self.playback_speed = 100
         self.ignore_key_press = False
@@ -240,6 +239,29 @@ class App(customtkinter.CTk):
         self.keyboard_queue = Queue()
         self.pressed_keys = set()
         self.themeNames = self.fetchThemes()
+        self.currentTab = "home"
+
+        self.drumsMap = {
+            42: self.config_data['drumsMap']['closed_Hi-Hat'],      # Closed Hi-Hat
+            44: self.config_data['drumsMap']['closed_Hi-Hat2'],     # Closed Hi-Hat #2
+            46: self.config_data['drumsMap']['open_Hi-Hat'],        # Open Hi-Hat
+            48: self.config_data['drumsMap']['tom1'],               # Tom 1
+            50: self.config_data['drumsMap']['tom1_2'],             # Tom 1 #2
+            60: self.config_data['drumsMap']['tom'],                # Tom 2
+            62: self.config_data['drumsMap']['tom2_2'],             # Tom 2 #2
+            49: self.config_data['drumsMap']['rightCrash'],         # Right Crash
+            55: self.config_data['drumsMap']['leftCrash'],          # Left Crash
+            38: self.config_data['drumsMap']['snare'],              # Snare
+            40: self.config_data['drumsMap']['snare2'],             # Snare #2
+            37: self.config_data['drumsMap']['snareSide'],          # Snare Side
+            35: self.config_data['drumsMap']['kick'],               # Kick
+            36: self.config_data['drumsMap']['kick2'],              # Kick #2
+            51: self.config_data['drumsMap']['ride'],               # Ride
+            53: self.config_data['drumsMap']['rideBell'],           # Ride Bell
+            39: self.config_data['drumsMap']['cowbell'],            # Cowbell
+            52: self.config_data['drumsMap']['crashChina'],         # Chinese/Alt Crash Symbal
+            57: self.config_data['drumsMap']['splashCrash'],        # Splash/Alt Crash Symbal #2
+        }
 
         self.hotkeys = {
             'play': self.config_data['playHotkey'],
@@ -331,6 +353,7 @@ class App(customtkinter.CTk):
         bannerimage = b64toimage(self.activeThemeData["Theme"]["Icons"]["banner"])
         resetimage = b64toimage(self.activeThemeData["Theme"]["Icons"]["reset"])
         pianoimage = b64toimage(self.activeThemeData["Theme"]["Icons"]["piano"])
+        drumimage = b64toimage(self.activeThemeData["Theme"]["Icons"]["drum"])
         downloadimage = b64toimage(self.activeThemeData["Theme"]["Icons"]["download"])
         searchimage = b64toimage(self.activeThemeData["Theme"]["Icons"]["search"])
         settings_image = b64toimage(self.activeThemeData["Theme"]["Icons"]["cogwheel"])
@@ -341,6 +364,7 @@ class App(customtkinter.CTk):
         self.logo_image = customtkinter.CTkImage(bannerimage, size=(86, 26))
         self.reset_image = customtkinter.CTkImage(resetimage, size=(16, 16))
         self.pianoimage = customtkinter.CTkImage(pianoimage, size=(20, 20))
+        self.drumimage = customtkinter.CTkImage(drumimage, size=(20, 20))
         self.downloadimagefile = customtkinter.CTkImage(downloadimage, size=(18, 18))
         self.searchimagefile = customtkinter.CTkImage(searchimage, size=(18, 18))
         self.settingsimage = customtkinter.CTkImage(settings_image, size=(18, 18))
@@ -373,12 +397,19 @@ class App(customtkinter.CTk):
         )
         self.home_button.grid(row=1, column=0, sticky="ew")
 
+        self.drums_tab_button = customtkinter.CTkButton(
+            self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Drums Macro",
+            fg_color=self.activeThemeData["Theme"]["Navigation"]["TabButtonColor"], text_color=self.activeThemeData["Theme"]["Navigation"]["TextColor"], hover_color=self.activeThemeData["Theme"]["Navigation"]["TabButtonHoverColor"],
+            image=self.drumimage, anchor="w", font=self.global_font, command=self.drums_tab_event
+        )
+        self.drums_tab_button.grid(row=2, column=0, sticky="ew")
+
         self.midi_hub = customtkinter.CTkButton(
             self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="MIDI Hub",
             fg_color=self.activeThemeData["Theme"]["Navigation"]["TabButtonColor"], text_color=self.activeThemeData["Theme"]["Navigation"]["TextColor"], hover_color=self.activeThemeData["Theme"]["Navigation"]["TabButtonHoverColor"],
             image=self.pianoimage, anchor="w", font=self.global_font, command=self.midi_hub_event
         )
-        self.midi_hub.grid(row=2, column=0, sticky="ew")
+        self.midi_hub.grid(row=3, column=0, sticky="ew")
 
         self.settings_tab = customtkinter.CTkButton(
             self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Settings",
@@ -401,8 +432,8 @@ class App(customtkinter.CTk):
                     return "urgent", alert_message
                 elif version not in latest_versions:
                     return "update", ""
-            except requests.RequestException:
-                print(f"Error checking for updates")
+            except requests.RequestException as e:
+                print(e)
 
             return "none", ""
 
@@ -540,6 +571,11 @@ class App(customtkinter.CTk):
             with open(config_path, 'w') as config_file:
                 json.dump(self.config_data, config_file, indent=2)
 
+        def switchHoldKeys():
+            self.config_data['holdKeys'] = switchHoldKeysvar.get() == "on"
+            with open(config_path, 'w') as config_file:
+                json.dump(self.config_data, config_file, indent=2)
+
         def switchConsole():
             self.config_data['console'] = switchConsolevar.get() == "on"
             with open(config_path, 'w') as config_file:
@@ -588,6 +624,7 @@ class App(customtkinter.CTk):
         switchLoopSongvar = customtkinter.StringVar(value="off")
         switchTooltipvar = customtkinter.StringVar(value="off")
         switchForceThemevar = customtkinter.StringVar(value="off")
+        switchHoldKeysvar = customtkinter.StringVar(value="off")
 
         self.midi_port_lock = threading.Lock()
 
@@ -603,6 +640,7 @@ class App(customtkinter.CTk):
         switchLoopSongvar.set("on" if self.config_data.get('loopSong', False) else "off")
         switchTooltipvar.set("on" if self.config_data.get('tooltip', False) else "off")
         switchForceThemevar.set("on" if self.config_data.get('forceTheme', False) else "off")
+        switchHoldKeysvar.set("on" if self.config_data.get('holdKeys', False) else "off")
 
         # MIDI
         self.home_frame = customtkinter.CTkFrame(self.master, corner_radius=0, fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["BackgroundColor"])
@@ -780,10 +818,6 @@ class App(customtkinter.CTk):
         )
         self.speedtext.grid(row=9, column=0, padx=(200,0), pady=(15, 0))
         self.speedtext.insert(0, "100")
-
-        self.speedtext.bind("<FocusOut>", self.slidertoentry)
-        self.speedtext.bind("<KeyRelease>", self.slidertoentry)
-        self.speed.bind("<ButtonRelease-1>", self.entrytoslider)
 
         self.stop_playback_flag = threading.Event()
 
@@ -966,7 +1000,14 @@ class App(customtkinter.CTk):
         self.settings_tab_miscellaneous = customtkinter.CTkLabel(
             self.settings_tab_frame, text="Miscellaneous", fg_color="transparent", font=self.global_font20, text_color=self.activeThemeData["Theme"]["Settings"]["TextColor"]
         )
-        self.settings_tab_miscellaneous.grid(row=4, column=0, padx=(85,0), pady=(0, 5), sticky="n")
+        self.settings_tab_miscellaneous.grid(row=3, column=0, padx=(85,0), pady=(0, 5), sticky="n")
+
+        self.settings_tab_frame_label_toggle_holdkey = customtkinter.CTkSwitch(
+            self.settings_tab_frame, text="Hold Keys", command=switchHoldKeys, variable=switchHoldKeysvar, font=self.global_font, onvalue="on", offvalue="off", fg_color=self.activeThemeData["Theme"]["Settings"]["SwitchDisabled"], progress_color=self.activeThemeData["Theme"]["Settings"]["SwitchEnabled"], button_color=self.activeThemeData["Theme"]["Settings"]["SwitchCircle"], button_hover_color=self.activeThemeData["Theme"]["Settings"]["SwitchCircleHovered"], text_color=self.activeThemeData["Theme"]["Settings"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["Settings"]["TextColorDisabled"]
+        )
+        self.settings_tab_frame_label_toggle_holdkey.grid(row=4, column=0, padx=(100,0), pady=(0, 5), sticky="s")
+
+        self.CreateToolTip(self.settings_tab_frame_label_toggle_holdkey, text = 'If disabled, the pressed keys will immediately be released.')
 
         self.settings_tab_frame_label_toggle_tooltip = customtkinter.CTkSwitch(
             self.settings_tab_frame, text="Tooltip", command=switchTooltip, variable=switchTooltipvar, font=self.global_font, onvalue="on", offvalue="off", fg_color=self.activeThemeData["Theme"]["Settings"]["SwitchDisabled"], progress_color=self.activeThemeData["Theme"]["Settings"]["SwitchEnabled"], button_color=self.activeThemeData["Theme"]["Settings"]["SwitchCircle"], button_hover_color=self.activeThemeData["Theme"]["Settings"]["SwitchCircleHovered"], text_color=self.activeThemeData["Theme"]["Settings"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["Settings"]["TextColorDisabled"]
@@ -1069,7 +1110,7 @@ class App(customtkinter.CTk):
             self.destroy()
 
             if "(Custom)" not in value:
-                response = requests.get("https://api.nanomidi.net/api/nanomidiplayer/theme")
+                response = requests.get("https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/theme.json")
                 
                 if response.status_code == 200:
                     theme_data = response.json()
@@ -1148,7 +1189,6 @@ class App(customtkinter.CTk):
         self.searchimagefile = customtkinter.CTkImage(searchimage, size=(18, 18))
 
         self.midi_data_url = "https://api.nanomidi.net/api/midiData"
-        self.image_base_url = "https://api.nanomidi.net/api/images/"
 
         self.page_size = 10
         self.current_page = 1
@@ -1177,6 +1217,176 @@ class App(customtkinter.CTk):
         else:
             if not os.path.exists(self.download_folder):
                 os.makedirs(self.download_folder)
+
+        # DRUMS MACRO
+
+        self.drums_tab_frame = customtkinter.CTkFrame(self.master, corner_radius=0, fg_color="#0A0A0A")
+        self.drums_tab_frame.grid_columnconfigure(0, weight=1)
+
+        self.drums_frame_label_1 = customtkinter.CTkLabel(
+            self.drums_tab_frame, text="MIDI File Path", fg_color="transparent", font=self.global_font, text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_frame_label_1.grid(row=2, column=0, padx=(0,200), pady=(10, 0))
+
+        def drumsSwitchMIDIEvent(event=None):
+            self.ignore_key_press = False
+            self.config_data["drumsMidiFile"] = self.drums_frame_entry_1.get()
+            with open(config_path, 'w') as file:
+                json.dump(self.config_data, file, indent=2)
+
+        self.drums_frame_entry_1 = customtkinter.CTkOptionMenu(self.drums_tab_frame, width=350, values="", command=drumsSwitchMIDIEvent, font=self.global_font, dropdown_font=self.global_font, fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["OptionBackColor"], dropdown_fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownBackground"], button_color=self.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownButtonColor"], button_hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownButtonHoverColor"], text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"])
+        self.drums_frame_entry_1.grid(row=3, column=0, padx=20, pady=(10, 0))
+
+        self.drums_select_file_button = customtkinter.CTkButton(
+            self.drums_tab_frame, text="Select File", command=self.open_file_dialog_drums, font=self.global_font, fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["ButtonColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["ButtonHoverColor"], text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_select_file_button.grid(row=2, column=0, padx=(0,55), pady=(10,0), sticky="e")
+
+        self.consolekl_drums = tk.Frame(master=self.drums_tab_frame, width=200, height=230, bg=self.activeThemeData["Theme"]["MidiPlayer"]["ConsoleBackground"])
+        self.consolekl_drums.grid(row=4, column=0, padx=(0,40), pady=(35,0), sticky="ne")
+        self.consolekl_drums.pack_propagate(0)
+
+        self.drums_frame_label_3 = customtkinter.CTkLabel(
+            self.drums_tab_frame, text=" Play:", fg_color="transparent", font=self.global_font, text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_frame_label_3.grid(row=4, column=0, padx=(0, 300), pady=(50, 0), sticky="n")
+
+        self.drums_play_hotkey = customtkinter.CTkButton(
+            self.drums_tab_frame, text=self.config_data.get('playHotkey', 'F1'), width=70, command=self.getPlayHotkey, font=self.global_font, fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorHoverColor"], text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_play_hotkey.grid(row=4, column=0, padx=(0, 165), pady=(50, 0), sticky="n")
+
+        self.drums_frame_label_4 = customtkinter.CTkLabel(
+            self.drums_tab_frame, text="Pause:", fg_color="transparent", font=self.global_font, text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_frame_label_4.grid(row=4, column=0, padx=(0, 300), pady=(80, 0), sticky="n")
+
+        self.drums_pause_hotkey = customtkinter.CTkButton(
+            self.drums_tab_frame, text=self.config_data.get('pauseHotkey', 'F2'), width=70, command=self.getPauseHotkey, font=self.global_font, fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorHoverColor"], text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_pause_hotkey.grid(row=4, column=0, padx=(0, 165), pady=(80, 0), sticky="n")
+
+        self.drums_frame_label_5 = customtkinter.CTkLabel(
+            self.drums_tab_frame, text=" Stop:", fg_color="transparent", font=self.global_font, text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_frame_label_5.grid(row=4, column=0, padx=(0, 300), pady=(110, 0), sticky="n")
+
+        self.drums_stop_hotkey = customtkinter.CTkButton(
+            self.drums_tab_frame, text=self.config_data.get('stopHotkey', 'F3'), width=70, command=self.getStopHotkey, font=self.global_font, fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorHoverColor"], text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_stop_hotkey.grid(row=4, column=0, padx=(0, 165), pady=(110, 0), sticky="n")
+
+        self.drums_frame_label_6 = customtkinter.CTkLabel(
+            self.drums_tab_frame, text="Slow Down:", fg_color="transparent", font=self.global_font, text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        ) 
+        self.drums_frame_label_6.grid(row=4, column=0, padx=(0, 330), pady=(140, 0), sticky="n")
+
+        self.drums_speed_hotkey = customtkinter.CTkButton(
+            self.drums_tab_frame, text=self.config_data.get('speedHotkey', 'F4'), width=70, command=self.getSpeedUpHotkey, font=self.global_font, fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorHoverColor"], text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_speed_hotkey.grid(row=4, column=0, padx=(0, 165), pady=(140, 0), sticky="n")
+
+        self.drums_frame_label_7 = customtkinter.CTkLabel(
+            self.drums_tab_frame, text=" Speed Up:", fg_color="transparent", font=self.global_font, text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_frame_label_7.grid(row=4, column=0, padx=(0, 330), pady=(170, 0), sticky="n")
+
+        self.drums_slow_hotkey = customtkinter.CTkButton(
+            self.drums_tab_frame, text=self.config_data.get('slowHotkey', 'F5'), width=70, command=self.getSlowDownHotkey, font=self.global_font, fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorHoverColor"], text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_slow_hotkey.grid(row=4, column=0, padx=(0, 165), pady=(170, 0), sticky="n")
+
+        self.drumsCredits = customtkinter.CTkLabel(
+            self.drums_tab_frame, text="-♡ Drums Macro\ncreated by ♡-\n>> fearsomeorc1406 <<", fg_color="transparent", text_color=self.activeThemeData["Theme"]["Navigation"]["WatermarkColor"], font=self.global_font
+        )
+        self.drumsCredits.grid(row=4, column=0, padx=(0, 235), pady=(220, 20), sticky="n")
+
+        self.drums_frame_label_1_toggle_console = customtkinter.CTkSwitch(
+            self.drums_tab_frame, text="Console", command=switchConsole, variable=switchConsolevar, font=self.global_font, onvalue="on", offvalue="off", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["SwitchDisabled"], progress_color=self.activeThemeData["Theme"]["MidiPlayer"]["SwitchEnabled"], button_color=self.activeThemeData["Theme"]["MidiPlayer"]["SwitchCircle"], button_hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["SwitchCircleHovered"], text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_frame_label_1_toggle_console.grid(row=4, column=0, padx=(184, 0), pady=(10, 10), sticky="nw")
+
+        self.CreateToolTip(self.drums_frame_label_1_toggle_console, text = 'Displays the notes playing\n(Can cause slight lag while playing)')
+
+        """
+        self.drums_frame_label_1_toggle_sustain = customtkinter.CTkSwitch(
+            self.drums_tab_frame, text="Sustain   ", command=switchSustain, variable=switchSustainvar, font=self.global_font, onvalue="on", offvalue="off", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["SwitchDisabled"], progress_color=self.activeThemeData["Theme"]["MidiPlayer"]["SwitchEnabled"], button_color=self.activeThemeData["Theme"]["MidiPlayer"]["SwitchCircle"], button_hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["SwitchCircleHovered"], text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_frame_label_1_toggle_sustain.grid(row=4, column=0, padx=(40, 0), pady=(10, 0), sticky="nw")
+
+        self.CreateToolTip(self.drums_frame_label_1_toggle_sustain, text = 'Simulates Pedal by "Spacebar"\nOnly works on supported games.')
+        """
+
+        self.drums_play_button = customtkinter.CTkButton(
+            self.drums_tab_frame, text="Play", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayColor"], width=80, command=self.drumsPlayButtonCommand, font=self.global_font, text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayColorHover"]
+        )
+        self.drums_play_button.grid(row=10, column=0, padx=45, pady=(0, 0), sticky="w")
+
+        self.drums_reset_button = customtkinter.CTkButton(
+            self.drums_tab_frame, text="Stop",fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["StopColorDisabled"], width=80, state="disabled", command=self.stop_playback, font=self.global_font, text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["StopColorHover"]
+        )
+        self.drums_reset_button.grid(row=10, column=0, padx=130, pady=(0, 0), sticky="w")
+
+        self.drums_timelineText = "0:00:00 / 0:00:00" if self.config_data['timestamp'] else "X:XX:XX / 0:00:00"
+
+        self.drums_timeline = customtkinter.CTkLabel(
+            self.drums_tab_frame, text=self.drums_timelineText, fg_color="transparent", font=self.global_font, text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_timeline.grid(row=10, column=0, padx=(0, 50), pady=(0, 0), sticky="e")
+
+        self.drums_speedlabel = customtkinter.CTkLabel(
+            self.drums_tab_frame, text="Speed", fg_color="transparent", font=self.global_font, text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_speedlabel.grid(row=9, column=0, padx=(0,290), pady=(15, 0))
+
+        self.drums_speed = customtkinter.CTkSlider(self.drums_tab_frame, from_=50, to=500, command=self.sliderupdate, fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderBackColor"], progress_color=self.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderFillColor"], button_color=self.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderCircleColor"], button_hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderCircleHoverColor"])
+        self.drums_speed.grid(row=9, column=0, padx=(0,50), pady=(15, 0))
+        self.drums_speed.set(100)
+
+        self.CreateToolTip(self.drums_speed, text = 'Playback Speed')
+
+        self.drums_resetspeed = customtkinter.CTkButton(
+            self.drums_tab_frame, image=self.reset_image, text="", width=30, command=self.resetspeedvalue, font=self.global_font, fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["ButtonColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["ButtonHoverColor"], text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], text_color_disabled=self.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.drums_resetspeed.grid(row=9, column=0, padx=(290, 0), pady=(15, 0))
+
+        self.drums_speedtext = customtkinter.CTkEntry(
+            self.drums_tab_frame, placeholder_text="100", width=50, fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["SpeedValueBoxBackColor"], font=self.global_font, border_color=self.activeThemeData["Theme"]["MidiPlayer"]["SpeedValueBoxBorderColor"], text_color=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"]
+        )
+        self.drums_speedtext.grid(row=9, column=0, padx=(200,0), pady=(15, 0))
+        self.drums_speedtext.insert(0, "100")
+
+        def tabbind(tab):
+            self.currentTab = tab
+            print(self.currentTab)
+
+            if self.currentTab == "drums":
+                for widget in self.consolekl_drums.winfo_children():
+                    widget.destroy()
+                self.consolekl_text_insert_ignorefalse("NOTE: This will only work")
+                self.consolekl_text_insert_ignorefalse("if your MIDI File")
+                self.consolekl_text_insert_ignorefalse("specifically uses drums")
+                self.consolekl_text_insert_ignorefalse("intrument!")
+
+                self.speedtext.unbind("<FocusOut>")
+                self.speedtext.unbind("<KeyRelease>")
+                self.speed.unbind("<ButtonRelease-1>")
+                
+                self.drums_speedtext.bind("<FocusOut>", self.slidertoentry)
+                self.drums_speedtext.bind("<KeyRelease>", self.slidertoentry)
+                self.drums_speed.bind("<ButtonRelease-1>", self.entrytoslider_drums)
+            elif self.currentTab == "home":
+                self.drums_speedtext.unbind("<FocusOut>")
+                self.drums_speedtext.unbind("<KeyRelease>")
+                self.drums_speed.unbind("<ButtonRelease-1>")
+                
+                self.speedtext.bind("<FocusOut>", self.slidertoentry)
+                self.speedtext.bind("<KeyRelease>", self.slidertoentry)
+                self.speed.bind("<ButtonRelease-1>", self.entrytoslider)
+
+        tabbind("home")
+        self.home_button.bind("<Button-1>", lambda event: tabbind("home"))
+        self.drums_tab_button.bind("<Button-1>", lambda event: tabbind("drums"))
 
         # PERMISSION
 
@@ -1243,6 +1453,7 @@ class App(customtkinter.CTk):
         # END
 
         added = self.config_data.get('addedMIDI', [])
+        drumsAdded = self.config_data.get('drumsAddedMidi', [])
 
         midiDIR = [
             os.path.join(self.download_folder, file)
@@ -1258,6 +1469,7 @@ class App(customtkinter.CTk):
         currentVAL = list(uniqueMIDI)
 
         self.home_frame_entry_1.configure(values=currentVAL)
+        self.drums_frame_entry_1.configure(values=drumsAdded)
 
         if currentVAL:
             self.home_frame_entry_1.configure(values=currentVAL)
@@ -1265,6 +1477,13 @@ class App(customtkinter.CTk):
         else:
             self.home_frame_entry_1.configure(values=[])
             self.home_frame_entry_1.set('')
+
+        if drumsAdded:
+            self.drums_frame_entry_1.configure(values=drumsAdded)
+            self.drums_frame_entry_1.set(drumsAdded[0])
+        else:
+            self.drums_frame_entry_1.configure(values=[])
+            self.drums_frame_entry_1.set('')
 
         def destroyMessage():
             self.warning.destroy()
@@ -1305,23 +1524,65 @@ class App(customtkinter.CTk):
 
     def clearMIDI(self, event=None):
         self.config_data["addedMIDI"] = []
+        self.config_data["drumsAddedMidi"] = []
+        self.home_frame_entry_1.configure(values=[])
+        self.drums_frame_entry_1.configure(values=[])
+
         with open(config_path, 'w') as file:
             json.dump(self.config_data, file, indent=2)
+
+        added = self.config_data.get('addedMIDI', [])
+
+        midiDIR = [
+            os.path.join(self.download_folder, file)
+            for file in os.listdir(self.download_folder)
+            if file.endswith('.mid') or file.endswith('.midi')
+        ]
+
+        allMidis = added + midiDIR
+
+        currentVAL = list(self.home_frame_entry_1.cget("values"))
+
+        uniqueMIDI = set(currentVAL + allMidis)
+        currentVAL = list(uniqueMIDI)
+
+        self.home_frame_entry_1.configure(values=currentVAL)
+
+        if currentVAL:
+            self.home_frame_entry_1.configure(values=currentVAL)
+            self.home_frame_entry_1.set(currentVAL[0])
+        else:
+            self.home_frame_entry_1.configure(values=[])
+            self.home_frame_entry_1.set('')
 
     def searchButton(self, event=None):
         self.filter_midi_data(event)
 
     def load_midi_data(self):
         response = requests.get(self.midi_data_url)
+        if response.status_code != 200:
+            please_wait = customtkinter.CTkLabel(
+                self.midi_hub_frame, text="Couldn't reach\nnanomidi.net!", 
+                text_color=self.activeThemeData["Theme"]["MIDIHub"]["TextColor"],
+                compound="left", font=self.global_font40
+            )
+            please_wait.grid(row=1, column=0, padx=10, pady=(100,0), sticky="nsew")
+            please_wait2 = customtkinter.CTkLabel(
+                self.midi_hub_frame, text=f"Error code: {response.status_code}\n\nServer may be down or you\nare being rate limited!\nPlease report this to the developer!", 
+                text_color=self.activeThemeData["Theme"]["MIDIHub"]["TextColor"],
+                compound="left", font=self.global_font
+            )
+            please_wait2.grid(row=2, column=0, padx=10, pady=(90,0), sticky="nsew")
+            return
+        
         self.all_midi_data = response.json()
         self.all_midi_data.reverse()
         self.filtered_midi_data = self.all_midi_data
         self.total_pages = (len(self.filtered_midi_data) + self.page_size - 1) // self.page_size
-
         self.show_page(self.current_page)
 
     def fetch_image(self, midi):
-        image_url = self.image_base_url + midi["imageFilename"]
+        image_url = f"https://api.nanomidi.net/api/v2/images/{midi['imageFilename']}?size=100x100"
         response = requests.get(image_url, stream=True)
         return customtkinter.CTkImage(Image.open(response.raw), size=(100, 100))
 
@@ -1341,7 +1602,7 @@ class App(customtkinter.CTk):
             self.midi_hub_frame, text="Fetching from nanomidi.net...", text_color=self.activeThemeData["Theme"]["MIDIHub"]["TextColor"],
             compound="left", font=self.global_font
         )
-        please_wait2.grid(row=2, column=0, padx=10, pady=(150,0), sticky="nsew")
+        please_wait2.grid(row=2, column=0, padx=10, pady=(100,0), sticky="nsew")
 
         self.midi_hub_frame.update()
                 
@@ -1451,6 +1712,7 @@ class App(customtkinter.CTk):
         self.home_frame_entry_1.set(filepath)
 
         self.select_frame_by_name("home")
+        self.currentTab = "home"
 
         midi_file = MidiFile(filepath)
         self.total_time = midi_file.length
@@ -1507,7 +1769,7 @@ class App(customtkinter.CTk):
             self.midi_hub_frame, text="Fetching from nanomidi.net...", text_color=self.activeThemeData["Theme"]["MIDIHub"]["TextColor"],
             compound="left", font=self.global_font
         )
-        please_wait2.grid(row=2, column=0, padx=10, pady=(150,0), sticky="nsew")
+        please_wait2.grid(row=2, column=0, padx=10, pady=(100,0), sticky="nsew")
 
         self.midi_hub_frame.update()
 
@@ -1537,7 +1799,10 @@ class App(customtkinter.CTk):
             #print(key_str)
 
             if key_str == self.hotkeys['play']:
-                self.toggle_playback()
+                if self.currentTab == "home":
+                    self.toggle_playback()
+                elif self.currentTab == "drums":
+                    self.toggle_playback_drums()
             elif key_str == self.hotkeys['pause']:
                 self.pause_playback()
             elif key_str == self.hotkeys['stop']:
@@ -1572,11 +1837,11 @@ class App(customtkinter.CTk):
 
     def updateClonedButton(self, hotkey_name, new_hotkey):
         clones = {
-            'play': ['settings_tab_frame_play_hotkey'],
-            'pause': ['settings_tab_frame_pause_hotkey'],
-            'stop': ['settings_tab_frame_stop_hotkey'],
-            'speed': ['settings_tab_frame_speed_hotkey'],
-            'slow': ['settings_tab_frame_slow_hotkey']
+            'play': ['settings_tab_frame_play_hotkey', 'drums_play_hotkey'],
+            'pause': ['settings_tab_frame_pause_hotkey', 'drums_pause_hotkey'],
+            'stop': ['settings_tab_frame_stop_hotkey', 'drums_stop_hotkey'],
+            'speed': ['settings_tab_frame_speed_hotkey', 'drums_speed_hotkey'],
+            'slow': ['settings_tab_frame_slow_hotkey', 'drums_slow_hotkey']
         }
 
         for clone_name in clones.get(hotkey_name, []):
@@ -1590,11 +1855,11 @@ class App(customtkinter.CTk):
             label.configure(text="Press Key")
 
         clones = {
-            'play': ['settings_tab_frame_play_hotkey'],
-            'pause': ['settings_tab_frame_pause_hotkey'],
-            'stop': ['settings_tab_frame_stop_hotkey'],
-            'speed': ['settings_tab_frame_speed_hotkey'],
-            'slow': ['settings_tab_frame_slow_hotkey']
+            'play': ['settings_tab_frame_play_hotkey', 'drums_play_hotkey'],
+            'pause': ['settings_tab_frame_pause_hotkey', 'drums_pause_hotkey'],
+            'stop': ['settings_tab_frame_stop_hotkey', 'drums_stop_hotkey'],
+            'speed': ['settings_tab_frame_speed_hotkey', 'drums_speed_hotkey'],
+            'slow': ['settings_tab_frame_slow_hotkey', 'drums_slow_hotkey']
         }
 
         for clone_name in clones.get(hotkey_name, []):
@@ -1616,6 +1881,22 @@ class App(customtkinter.CTk):
             self.total_time = midifile.length
             self.timelineTextLoadMIDI = f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}" if self.config_data['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(self.total_time)))}"
             self.timeline.configure(text=self.timelineTextLoadMIDI)
+
+            self.set_hotkeys()
+
+        drums_midi_file = self.config_data.get('drumsMidiFile')
+        if drums_midi_file and os.path.exists(drums_midi_file):
+            currentVAL = list(self.drums_frame_entry_1.cget("values"))
+            if drums_midi_file not in currentVAL:
+                currentVAL.append(drums_midi_file)
+                self.drums_frame_entry_1.configure(values=currentVAL)
+
+            self.drums_frame_entry_1.set(drums_midi_file)
+
+            midifile = MidiFile(drums_midi_file)
+            self.total_time = midifile.length
+            self.drums_timelineTextLoadMIDI = f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}" if self.config_data['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(self.total_time)))}"
+            self.drums_timeline.configure(text=self.drums_timelineTextLoadMIDI)
 
             self.set_hotkeys()
 
@@ -1664,10 +1945,18 @@ class App(customtkinter.CTk):
         else:
             self.toggle_playback()
 
+    def drumsPlayButtonCommand(self, event=None):
+        if self.isRunning:
+            self.pause_playback(self)
+        else:
+            self.toggle_playback_drums()
+
     def sliderupdate(self, value):
         rounded_value = round(float(value))
         self.speedtext.delete(0, "end")
         self.speedtext.insert(0, str(rounded_value))
+        self.drums_speedtext.delete(0, "end")
+        self.drums_speedtext.insert(0, str(rounded_value))
         self.playback_speed = min(500, rounded_value)
 
     def slidertoentry(self, event=None):
@@ -1675,13 +1964,30 @@ class App(customtkinter.CTk):
             value = float(self.speedtext.get())
             if 10 <= value <= 500:
                 self.speed.set(value)
+                self.drums_speed.set(value)
+                
+                self.drums_speedtext.delete(0, "end")
+                self.drums_speedtext.insert(0, str(value))
         except ValueError:
             pass
 
     def entrytoslider(self, event):
         value = self.speed.get()
         self.speedtext.delete(0, "end")
-        self.speedtext.insert(0, str(value))
+        self.speedtext.insert(0, int(round(float(value))))
+
+        self.drums_speedtext.delete(0, "end")
+        self.drums_speedtext.insert(0, int(round(float(value))))
+        self.drums_speed.set(value)
+
+    def entrytoslider_drums(self, event):
+        value = self.drums_speed.get()
+        self.speedtext.delete(0, "end")
+        self.speedtext.insert(0, int(round(float(value))))
+
+        self.drums_speedtext.delete(0, "end")
+        self.drums_speedtext.insert(0, int(round(float(value))))
+        self.speed.set(value)
 
     def slidertoentry_decreaseSize(self, event=None):
         try:
@@ -1803,6 +2109,10 @@ class App(customtkinter.CTk):
         self.speedtext.insert(0, 100)
         self.speed.set(100)
 
+        self.drums_speedtext.delete(0, "end")
+        self.drums_speedtext.insert(0, 100)
+        self.drums_speed.set(100)
+
     def getPlayHotkey(self):
         self.get_hotkey('play', self.play_hotkey)
 
@@ -1825,7 +2135,7 @@ class App(customtkinter.CTk):
             return
 
         useMIDI = self.config_data.get('useMIDI', False)
-        if not useMIDI and not self.isRunning and not os_name == "Darwin": # Translate
+        if not useMIDI and not self.isRunning and not os_name == "Darwin":
             print("Using MIDI2Qwerty")
             self.selected_device = self.home_frame_combobox_1.get()
             self.midi_file_path = self.home_frame_entry_1.get()
@@ -1872,32 +2182,39 @@ class App(customtkinter.CTk):
                 if type == "note_on":
                     if self.config_data["velocity"]:
                         velocitykey = find_velocity_key(velocity)
-                        self.keyboard_controller.press(Key.alt)
-                        self.keyboard_controller.press(velocitykey)
-                        self.keyboard_controller.release(velocitykey)
-                        self.keyboard_controller.release(Key.alt)
+                        kb.press('alt')
+                        kb.press(velocitykey)
+                        kb.release(velocitykey)
+                        kb.release('alt')
                         log_message = f"velocity: alt + {velocitykey}"
 
                     if 0 <= note - 36 <= 60:
                         if self.config_data["noDoubles"]:
                             if re.search("[!@$%^*(]", key):
-                                self.keyboard_controller.release(letterNoteMap[index - 1])
+                                kb.release(letterNoteMap[index - 1])
                             else:
-                                self.keyboard_controller.release(key.lower())
+                                kb.release(key.lower())
                         if re.search("[!@$%^*(]", key):
-                            self.keyboard_controller.press(Key.shift)
-                            self.keyboard_controller.press(letterNoteMap[index - 1])
-                            self.keyboard_controller.release(Key.shift)
+                            kb.press('shift')
+                            kb.press(letterNoteMap[index - 1])
+                            kb.release('shift')
+                            if not self.config_data["holdKeys"]:
+                                kb.release(letterNoteMap[index - 1])
                             log_message = f"press: shift + {letterNoteMap[index - 1]}"
                         elif key.isupper():
-                            self.keyboard_controller.press(Key.shift)
-                            self.keyboard_controller.press(key.lower())
-                            self.keyboard_controller.release(Key.shift)
+                            kb.press('shift')
+                            kb.press(key.lower())
+                            kb.release('shift')
+                            if not self.config_data["holdKeys"]:
+                                kb.release(key.lower())
                             log_message = f"press: shift + {key.lower()}"
                         else:
-                            self.keyboard_controller.press(key)
+                            kb.press(key)
                             self.pressed_keys.add(key)
+                            if not self.config_data["holdKeys"]:
+                                kb.release(key)
                             log_message = f"press: {key}"
+
                     elif self.config_data["88Keys"]:
                         K = None
                         if 20 <= note < 40:
@@ -1905,17 +2222,19 @@ class App(customtkinter.CTk):
                         else:
                             K = HighNotes[note - 109]
                         if K:
-                            self.keyboard_controller.release(K.lower())
-                            self.keyboard_controller.press(Key.ctrl)
-                            self.keyboard_controller.press(K.lower())
-                            self.keyboard_controller.release(Key.ctrl)
+                            kb.release(K.lower())
+                            kb.press('ctrl')
+                            kb.press(K.lower())
+                            kb.release('ctrl')
+                            if not self.config_data["holdKeys"]:
+                                kb.release(K.lower())
                             log_message = f"press: ctrl + {K.lower()}"
                 elif 0 <= note - 36 <= 60:
                     if re.search("[!@$%^*(]", key):
-                        self.keyboard_controller.release(letterNoteMap[index - 1])
+                        kb.release(letterNoteMap[index - 1])
                         log_message = f"release: {letterNoteMap[index - 1]}"
                     else:
-                        self.keyboard_controller.release(key.lower())
+                        kb.release(key.lower())
                         self.pressed_keys.discard(key.lower())
                         log_message = f"release: {key.lower()}"
                 else:
@@ -1923,7 +2242,7 @@ class App(customtkinter.CTk):
                         K = LowNotes[note - 21]
                     else:
                         K = HighNotes[note - 109]
-                    self.keyboard_controller.release(K.lower())
+                    kb.release(K.lower())
                     log_message = f"release: {K.lower()}"
 
                 if log_message is not None:
@@ -1935,18 +2254,18 @@ class App(customtkinter.CTk):
                     else:
                         print(log_message)
 
-                if self.config_data.get('console', False):
-                    threading.Thread(target=self.consolekl_text_insert, args=(f"{log_message}",)).start()
+                    if self.config_data.get('console', False):
+                        threading.Thread(target=self.consolekl_text_insert, args=(f"{log_message}",)).start()
 
             def parse_midi(message):
                 if message.type == "control_change" and self.config_data["sustainEnabled"]:
                     if not self.sustainToggle or message.value > self.config_data["sustainCutoff"]:
                         self.sustainToggle = True
-                        self.keyboard_controller.press(Key.space)
+                        kb.press('space')
                         print("press: space (sustain on)")
                     elif self.sustainToggle and message.value < self.config_data["sustainCutoff"]:
                         self.sustainToggle = False
-                        self.keyboard_controller.release(Key.space)
+                        kb.release('space')
                         print("release: space (sustain off)")
                 else:
                     if message.type == "note_on" or message.type == "note_off":
@@ -1979,8 +2298,12 @@ class App(customtkinter.CTk):
                                 time.sleep(msg.time * (100 / self.playback_speed) * playback_speed_factor)
                             elif random.random() < self.config_data["failType"]["transpose"] / 100:
                                 if hasattr(msg, 'note'):
+                                    original_note = msg.note
                                     msg.note += random.randint(-12, 12)
-                                    time.sleep(msg.time * (100 / self.playback_speed))
+                                    simulate_key("note_on", msg.note, msg.velocity)
+                                    simulate_key("note_off", msg.note, msg.velocity)
+                                    msg.note = original_note
+                                time.sleep(msg.time * (100 / self.playback_speed))
                             else:
                                 time.sleep(msg.time * (100 / self.playback_speed))
                         else:
@@ -2364,17 +2687,121 @@ class App(customtkinter.CTk):
 
             threading.Thread(target=midi_playback, daemon=True).start()
 
+    def toggle_playback_drums(self, e=None):
+        if not os.path.exists(self.drums_frame_entry_1.get()):
+            print(f"MIDI File does not exist.")
+            threading.Thread(target=self.consolekl_text_insert_ignorefalse, args=(f"MIDI File does not exist.",)).start()
+            return
+        
+        if not self.isRunning:    
+            self.drums_midi_file_path = self.drums_frame_entry_1.get()
+            print("nanoMIDI Drums2VK Translator v1.0 // Made by: hdsfgh")
+            self.isRunning = True
+            self.CloseThread = False
+
+            self.drums_play_button.configure(text="Playing", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayingColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayingColorHover"])
+            self.drums_reset_button.configure(state="normal", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["StopColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["StopColorHover"])
+
+            def play_midi():
+                try:
+                    mid = mido.MidiFile(self.drums_midi_file_path)
+                    start_time = time.time()
+                    current_position = 0
+                    total_duration = mid.length
+
+                    for msg in mid:
+                        time.sleep(msg.time * (100 / self.playback_speed))
+                        self.pause_event.wait()
+                        elapsed_time = time.time() - start_time
+
+                        """ Sustain broken for some reason idk i dont do drums
+                        if msg.type == "control_change" and self.config_data["sustainEnabled"]:
+                            if not self.sustainToggle or msg.value > self.config_data["sustainCutoff"]:
+                                self.sustainToggle = True
+                                kb.press('space')
+                                print("press: space (sustain on)")
+                            elif self.sustainToggle and msg.value < self.config_data["sustainCutoff"]:
+                                self.sustainToggle = False
+                                kb.release('space')
+                                print("release: space (sustain off)")
+                        """
+                        
+                        if msg.type == 'note_on' and msg.velocity > 0:
+                            key = self.drumsMap.get(msg.note)
+                            if key is not None:
+                                kb.press(key)
+                                if not self.config_data["holdKeys"]:
+                                    kb.release(key)
+                                print(f"press: {key}")
+                                if self.config_data.get('console', False):
+                                    threading.Thread(target=self.consolekl_text_insert, args=(f"press: {key}",)).start()
+                        elif msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
+                            key = self.drumsMap.get(msg.note)
+                            if key is not None:
+                                kb.release(key)
+
+                        if self.CloseThread:
+                            break
+
+                        self.CloseThread = False
+                        current_time = time.time()
+                        elapsed_time = current_time - start_time
+                        sleep_time = max(0, msg.time * (100 / self.playback_speed) - elapsed_time)
+                        time.sleep(sleep_time)
+                        start_time = current_time
+
+                        current_position += msg.time * (100 / self.playback_speed)
+                        current_time_str = time.strftime("%H:%M:%S", time.gmtime(current_position)).split(':')
+                        current_position_formatted = f"{int(current_time_str[0]) if current_time_str[0] != '00' else '0'}:{int(current_time_str[1]):02d}:{int(current_time_str[2]):02d}"
+                        total_duration_str = time.strftime("%H:%M:%S", time.gmtime(total_duration)).split(':')
+                        total_duration_formatted = f"{int(total_duration_str[0]) if total_duration_str[0] != '00' else '0'}:{int(total_duration_str[1]):02d}:{int(total_duration_str[2]):02d}"
+
+                        def updatetimeline():
+                            if not self.hasUpdated:
+                                self.hasUpdated = True
+                                self.drums_timeline.configure(text=f"{current_position_formatted} / {total_duration_formatted}")
+                                time.sleep(1)
+                                self.hasUpdated = False
+
+                        if self.config_data['timestamp'] and not self.hasUpdated:
+                            threading.Thread(target=updatetimeline).start()
+
+                    if self.config_data['loopSong'] and not self.CloseThread:
+                        print("repeat")
+                        play_midi()
+                    else:
+                        print("Done")
+                        midi_file = MidiFile(self.midi_file_path)
+                        self.total_time = midi_file.length
+                        self.drums_timelineTextLoadMIDI = f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}" if self.config_data['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(self.total_time)))}"
+                        self.drums_timeline.configure(text=self.drums_timelineTextLoadMIDI)
+                        self.isRunning = False
+                        self.drums_play_button.configure(text="Play", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayColorHover"])
+                        self.drums_reset_button.configure(state="disabled", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["StopColorDisabled"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["StopColorHover"])
+                        threading.Thread(target=self.consolekl_text_insert, args=(f"----- Done -----",)).start()
+
+                except FileNotFoundError:
+                    print(f"File not found.")
+                except Exception as e:
+                    print(e)
+
+            threading.Thread(target=play_midi, daemon=True).start()
+
     def pause_playback(self, event=None):
+        if self.currentTab == "home":
+            pauseButton = self.play_button
+        elif self.currentTab == "drums":
+            pauseButton = self.drums_play_button
         if self.isRunning:
             if self.pause_event.is_set():
                 self.pause_event.clear()
                 print("Paused")
-                self.play_button.configure(text="Paused", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["PausedColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["PausedColorHover"])
+                pauseButton.configure(text="Paused", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["PausedColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["PausedColorHover"])
                 threading.Thread(target=self.consolekl_text_insert, args=(f"----- Paused -----",)).start()
             else:
                 self.pause_event.set()
                 print("Resumed")
-                self.play_button.configure(text="Playing", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayingColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayingColor"])
+                pauseButton.configure(text="Playing", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayingColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayingColor"])
                 threading.Thread(target=self.consolekl_text_insert, args=(f"----- Resumed -----",)).start()
 
     def stop_playback(self, event=None):
@@ -2388,63 +2815,76 @@ class App(customtkinter.CTk):
     def speedup_playback(self, event=None):
         self.playback_speed = max(10, self.playback_speed - self.config_data['decreaseSize'])
         self.speed.set(self.playback_speed)
+        self.drums_speed.set(self.playback_speed)
 
         rounded_value = round(float(self.playback_speed))
         self.speedtext.delete(0, "end")
         self.speedtext.insert(0, str(rounded_value))
+
+        self.drums_speedtext.delete(0, "end")
+        self.drums_speedtext.insert(0, str(rounded_value))
 
         print(f"speed: {self.playback_speed}")
 
     def slowdown_playback(self, event=None):
         self.playback_speed = min(500, self.playback_speed + self.config_data['decreaseSize'])
         self.speed.set(self.playback_speed)
+        self.drums_speed.set(self.playback_speed)
 
         rounded_value = round(float(self.playback_speed))
         self.speedtext.delete(0, "end")
         self.speedtext.insert(0, str(rounded_value))
 
+        self.drums_speedtext.delete(0, "end")
+        self.drums_speedtext.insert(0, str(rounded_value))
+
         print(f"speed: {self.playback_speed}")
 
     def consolekl_text_insert(self, text):
         if self.config_data.get('console', False):
-            label = tk.Label(self.consolekl, text=text, fg=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], bg=self.activeThemeData["Theme"]["MidiPlayer"]["ConsoleBackground"], height=1, font=self.global_font12)
+            if self.currentTab == "drums":
+                consoleklLoc = self.consolekl_drums
+                max_messages = self.max_drumlog_messages
+            else:
+                consoleklLoc = self.consolekl
+                max_messages = self.max_log_messages
+            
+            label = tk.Label(consoleklLoc, text=text, fg=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], bg=self.activeThemeData["Theme"]["MidiPlayer"]["ConsoleBackground"], height=1, font=self.global_font12)
             label.pack(anchor="sw")
             self.log_labels.append(label)
 
-            if len(self.log_labels) > self.max_log_messages:
+            if len(self.log_labels) > max_messages:
                 oldest_label = self.log_labels.pop(0)
                 oldest_label.destroy()
 
-            if len(self.consolekl.winfo_children()) > 20:
-                for widget in self.consolekl.winfo_children():
+            if len(consoleklLoc.winfo_children()) > 20:
+                for widget in consoleklLoc.winfo_children():
                     widget.destroy()
 
-            self.consolekl.update_idletasks()
+            consoleklLoc.update_idletasks()
+
 
     def consolekl_text_insert_ignorefalse(self, text):
-        label = tk.Label(self.consolekl, text=text, fg=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], bg=self.activeThemeData["Theme"]["MidiPlayer"]["ConsoleBackground"], height=1, font=self.global_font12)
+        if self.currentTab == "drums":
+            consoleklLoc = self.consolekl_drums
+            max_messages = self.max_drumlog_messages
+        else:
+            consoleklLoc = self.consolekl
+            max_messages = self.max_log_messages
+        
+        label = tk.Label(consoleklLoc, text=text, fg=self.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], bg=self.activeThemeData["Theme"]["MidiPlayer"]["ConsoleBackground"], height=1, font=self.global_font12)
         label.pack(anchor="sw")
         self.log_labels.append(label)
 
-        if len(self.log_labels) > self.max_log_messages:
+        if len(self.log_labels) > max_messages:
             oldest_label = self.log_labels.pop(0)
             oldest_label.destroy()
 
-        if len(self.consolekl.winfo_children()) > 20:
-            for widget in self.consolekl.winfo_children():
+        if len(consoleklLoc.winfo_children()) > 20:
+            for widget in consoleklLoc.winfo_children():
                 widget.destroy()
 
-        self.consolekl.update_idletasks()
-
-    def update_timeline(self):
-        if self.playback_start_time is not None and self.playback_state:
-            elapsed_time = time.time() - self.playback_start_time
-            total_time = self.midi_file.length
-            elapsed_time_str = str(datetime.timedelta(seconds=int(elapsed_time)))
-            total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-            timeline_text = f"{elapsed_time_str} / {total_time_str}"
-            self.timeline.configure(text=timeline_text)
-            self.after(1000, self.update_timeline)
+        consoleklLoc.update_idletasks()
 
     def open_file_dialog(self):
         self.home_frame_entry_1.set("")
@@ -2485,6 +2925,45 @@ class App(customtkinter.CTk):
 
             self.ignore_key_press = False
 
+    def open_file_dialog_drums(self):
+        self.drums_frame_entry_1.set("")
+        self.stop_playback_flag.set()
+        self.playback_state = False
+        self.play_button.configure(text="Play")
+        self.CloseThread = True
+
+        self.ignore_key_press = True
+        self.stop_playback()
+
+        file_path = filedialog.askopenfilename(filetypes=[("MIDI files", "*.mid"), ("MIDI files", "*.midi")])
+        if file_path:
+            currentVAL = list(self.drums_frame_entry_1.cget("values"))
+            if file_path not in currentVAL:
+                currentVAL.append(file_path)
+                self.drums_frame_entry_1.configure(values=currentVAL)
+
+            self.drums_frame_entry_1.set(file_path)
+
+            midi_file = MidiFile(file_path)
+            self.total_time = midi_file.length
+            self.drums_timelineTextLoadMIDI = (
+                f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}"
+                if self.config_data['timestamp']
+                else f"X:XX:XX / {str(datetime.timedelta(seconds=int(self.total_time)))}"
+            )
+            self.drums_timeline.configure(text=self.drums_timelineTextLoadMIDI)
+
+            self.config_data['drumsMidiFile'] = file_path
+            if 'drumsAddedMidi' not in self.config_data:
+                self.config_data['drumsAddedMidi'] = []
+            if file_path not in self.config_data['drumsAddedMidi']:
+                self.config_data['drumsAddedMidi'].append(file_path)
+
+            with open(config_path, 'w') as config_file:
+                json.dump(self.config_data, config_file, indent=2)
+
+            self.ignore_key_press = False
+
     def select_frame_by_name(self, name):
         self.home_button.configure(fg_color=self.activeThemeData["Theme"]["Navigation"]["TabButtonSelectedColor"] if name == "home" else self.activeThemeData["Theme"]["Navigation"]["TabButtonColor"])
         if name == "home":
@@ -2512,7 +2991,7 @@ class App(customtkinter.CTk):
                 self.midi_hub_frame, text="Fetching from nanomidi.net...", text_color=self.activeThemeData["Theme"]["MIDIHub"]["TextColor"],
                 compound="left", font=self.global_font
             )
-            please_wait2.grid(row=2, column=0, padx=10, pady=(150,0), sticky="nsew")
+            please_wait2.grid(row=2, column=0, padx=10, pady=(100,0), sticky="nsew")
 
         self.settings_tab.configure(fg_color=self.activeThemeData["Theme"]["Navigation"]["TabButtonSelectedColor"] if name == "settings_tab" else self.activeThemeData["Theme"]["Navigation"]["TabButtonColor"])
         if name == "settings_tab":
@@ -2524,6 +3003,11 @@ class App(customtkinter.CTk):
             self.permission_tab_frame.grid(row=0, column=1, sticky="nsew")
         else:
             self.permission_tab_frame.grid_forget()
+
+        if name == "drums_tab":
+            self.drums_tab_frame.grid(row=0, column=1, sticky="nsew")
+        else:
+            self.drums_tab_frame.grid_forget()
 
     def home_button_event(self):
         self.select_frame_by_name("home")
@@ -2537,6 +3021,9 @@ class App(customtkinter.CTk):
 
     def permission_tab_event(self):
         self.select_frame_by_name("permission_tab")
+
+    def drums_tab_event(self):
+        self.select_frame_by_name("drums_tab")
 
     def create_debug_console(self):
         ctypes.windll.kernel32.AllocConsole()
@@ -2560,7 +3047,7 @@ class App(customtkinter.CTk):
 
     def fetchThemes(self):
         try:
-            response = requests.get("https://api.nanomidi.net/api/nanomidiplayer/theme")
+            response = requests.get("https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/theme.json")
             response.raise_for_status()
             data = response.json()
             
