@@ -17,6 +17,7 @@ import webbrowser
 import subprocess
 import customtkinter
 import tkinter as tk
+import keyboard as kb
 import concurrent.futures
 
 from io import BytesIO
@@ -35,7 +36,6 @@ if os_name == "Darwin":
     is_input_trusted = HIServices.AXIsProcessTrusted()
     base_directory = os.path.join(os.path.expanduser("~"), 'nanoMIDIPlayer')
 else:
-    import keyboard as kb
     base_directory = os.getcwd()
 
 config_filename = 'config.json'
