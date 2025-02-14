@@ -17,7 +17,6 @@ import webbrowser
 import subprocess
 import customtkinter
 import tkinter as tk
-import keyboard as kb
 import concurrent.futures
 
 from io import BytesIO
@@ -28,7 +27,7 @@ from PIL import Image, ImageTk
 from pynput.keyboard import Controller, Key, Listener
 from tkinter import filedialog, Toplevel, LEFT, SOLID, Label
 
-version = "B-10.4.20"
+version = "10.4.20"
 os_name = platform.system()
 
 if os_name == "Darwin":
@@ -36,6 +35,7 @@ if os_name == "Darwin":
     is_input_trusted = HIServices.AXIsProcessTrusted()
     base_directory = os.path.join(os.path.expanduser("~"), 'nanoMIDIPlayer')
 else:
+    import keyboard as kb
     base_directory = os.getcwd()
 
 config_filename = 'config.json'
@@ -2693,7 +2693,7 @@ class App(customtkinter.CTk):
             threading.Thread(target=self.consolekl_text_insert_ignorefalse, args=(f"MIDI File does not exist.",)).start()
             return
         
-        if not self.isRunning:    
+        if not self.isRunning and not os_name == "Darwin":    
             self.drums_midi_file_path = self.drums_frame_entry_1.get()
             print("nanoMIDI Drums2VK Translator v1.0 // Made by: hdsfgh")
             self.isRunning = True
@@ -2785,7 +2785,99 @@ class App(customtkinter.CTk):
                 except Exception as e:
                     print(e)
 
-            threading.Thread(target=play_midi, daemon=True).start()
+        elif not self.isRunning and os_name == "Darwin": # macOS Drums
+            self.drums_midi_file_path = self.drums_frame_entry_1.get()
+            print("nanoMIDI Drums2VK Translator v1.0 // Made by: hdsfgh")
+            self.isRunning = True
+            self.CloseThread = False
+
+            self.drums_play_button.configure(text="Playing", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayingColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayingColorHover"])
+            self.drums_reset_button.configure(state="normal", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["StopColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["StopColorHover"])
+
+            def play_midi():
+                try:
+                    mid = mido.MidiFile(self.drums_midi_file_path)
+                    start_time = time.time()
+                    current_position = 0
+                    total_duration = mid.length
+
+                    for msg in mid:
+                        time.sleep(msg.time * (100 / self.playback_speed))
+                        self.pause_event.wait()
+                        elapsed_time = time.time() - start_time
+
+                        """ Sustain broken for some reason idk i dont do drums
+                        if msg.type == "control_change" and self.config_data["sustainEnabled"]:
+                            if not self.sustainToggle or msg.value > self.config_data["sustainCutoff"]:
+                                self.sustainToggle = True
+                                kb.press('space')
+                                print("press: space (sustain on)")
+                            elif self.sustainToggle and msg.value < self.config_data["sustainCutoff"]:
+                                self.sustainToggle = False
+                                kb.release('space')
+                                print("release: space (sustain off)")
+                        """
+                        
+                        if msg.type == 'note_on' and msg.velocity > 0:
+                            key = self.drumsMap.get(msg.note)
+                            if key is not None:
+                                self.keyboard_controller.press(key)
+                                if not self.config_data["holdKeys"]:
+                                    self.keyboard_controller.release(key)
+                                print(f"press: {key}")
+                                if self.config_data.get('console', False):
+                                    threading.Thread(target=self.consolekl_text_insert, args=(f"press: {key}",)).start()
+                        elif msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
+                            key = self.drumsMap.get(msg.note)
+                            if key is not None:
+                                self.keyboard_controller.release(key)
+
+                        if self.CloseThread:
+                            break
+
+                        self.CloseThread = False
+                        current_time = time.time()
+                        elapsed_time = current_time - start_time
+                        sleep_time = max(0, msg.time * (100 / self.playback_speed) - elapsed_time)
+                        time.sleep(sleep_time)
+                        start_time = current_time
+
+                        current_position += msg.time * (100 / self.playback_speed)
+                        current_time_str = time.strftime("%H:%M:%S", time.gmtime(current_position)).split(':')
+                        current_position_formatted = f"{int(current_time_str[0]) if current_time_str[0] != '00' else '0'}:{int(current_time_str[1]):02d}:{int(current_time_str[2]):02d}"
+                        total_duration_str = time.strftime("%H:%M:%S", time.gmtime(total_duration)).split(':')
+                        total_duration_formatted = f"{int(total_duration_str[0]) if total_duration_str[0] != '00' else '0'}:{int(total_duration_str[1]):02d}:{int(total_duration_str[2]):02d}"
+
+                        def updatetimeline():
+                            if not self.hasUpdated:
+                                self.hasUpdated = True
+                                self.drums_timeline.configure(text=f"{current_position_formatted} / {total_duration_formatted}")
+                                time.sleep(1)
+                                self.hasUpdated = False
+
+                        if self.config_data['timestamp'] and not self.hasUpdated:
+                            threading.Thread(target=updatetimeline).start()
+
+                    if self.config_data['loopSong'] and not self.CloseThread:
+                        print("repeat")
+                        play_midi()
+                    else:
+                        print("Done")
+                        midi_file = MidiFile(self.midi_file_path)
+                        self.total_time = midi_file.length
+                        self.drums_timelineTextLoadMIDI = f"0:00:00 / {str(datetime.timedelta(seconds=int(self.total_time)))}" if self.config_data['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(self.total_time)))}"
+                        self.drums_timeline.configure(text=self.drums_timelineTextLoadMIDI)
+                        self.isRunning = False
+                        self.drums_play_button.configure(text="Play", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayColor"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["PlayColorHover"])
+                        self.drums_reset_button.configure(state="disabled", fg_color=self.activeThemeData["Theme"]["MidiPlayer"]["StopColorDisabled"], hover_color=self.activeThemeData["Theme"]["MidiPlayer"]["StopColorHover"])
+                        threading.Thread(target=self.consolekl_text_insert, args=(f"----- Done -----",)).start()
+
+                except FileNotFoundError:
+                    print(f"File not found.")
+                except Exception as e:
+                    print(e)
+
+        threading.Thread(target=play_midi, daemon=True).start()
 
     def pause_playback(self, event=None):
         if self.currentTab == "home":
