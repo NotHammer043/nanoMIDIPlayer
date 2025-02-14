@@ -9,27 +9,17 @@
 ---
 
 ## 🚀 Features  
-✅ **Open Source**
-
-✅ Macro **QWERTY keys** from MIDI input
-
-✅ **Velocity** and **Sustain**
-
-✅ **88 Key** support
-
-✅ **Random Fail** (random Speed or Transposition failures)
-
-✅ Simulate MIDI data directly to **MIDI output devices**
-
-✅ **Drums** Macro
-
-✅ **Modifiable** Hotkeys
-
-✅ Built-in **MIDI Hub** from [nanoMIDI.net](https://nanomidi.net)
-
-✅ **Customizable** User-Interface
-
-✅ **🪟Windows and 🍏macOS Support**
+✅ **Open Source**  
+✅ Macro **QWERTY keys** from MIDI input  
+✅ **Velocity** and **Sustain**  
+✅ **88 Key** support  
+✅ **Random Fail** (random Speed or Transposition failures)  
+✅ Simulate MIDI data directly to **MIDI output devices**  
+✅ **Drums** Macro  
+✅ **Modifiable** Hotkeys  
+✅ Built-in **MIDI Hub** from [nanoMIDI.net](https://nanomidi.net)  
+✅ **Customizable** User-Interface  
+✅ **🪟Windows and 🍏macOS Support**  
 
 ---
 
