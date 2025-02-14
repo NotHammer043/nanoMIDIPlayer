@@ -35,7 +35,7 @@ Get the latest version of **nanoMIDIPlayer**:
 [![Download nanoMIDIPlayer](https://img.shields.io/github/downloads/NotHammer043/nanoMIDIPlayer/total?style=for-the-badge)](https://github.com/NotHammer043/nanoMIDIPlayer/releases)  
 
 ### 🛠️ Setup  
-1️⃣ **Download** [nanoMIDIPlayer.exe](https://github.com/NotHammer043/nanoMIDIPlayer/releases)  or [nanoMIDIPlayer-macOS.dmg](https://github.com/NotHammer043/nanoMIDIPlayer/releases) for macOS
+1️⃣ **Download** [nanoMIDIPlayer.exe](https://github.com/NotHammer043/nanoMIDIPlayer/releases)  or [nanoMIDIPlayer-macOS.dmg](https://github.com/NotHammer043/nanoMIDIPlayer/releases) for macOS  
 2️⃣ **Run** nanoMIDIPlayer.exe  
 3️⃣ **Select a MIDI File** or find one from **MIDI Hub**  
 4️⃣ **Focus** on your virtual piano app/game  
