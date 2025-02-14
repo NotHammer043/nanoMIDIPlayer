@@ -5,7 +5,7 @@
 
 ![GitHub stars](https://img.shields.io/github/stars/NotHammer043/nanoMIDIPlayer?style=for-the-badge)  
 ![GitHub license](https://img.shields.io/github/license/NotHammer043/nanoMIDIPlayer?style=for-the-badge)  
-![GitHub issues](https://img.shields.io/github/issues/NotHammer043/nanoMIDIPlayer?style=for-the-badge)  
+[![Download nanoMIDIPlayer](https://img.shields.io/github/downloads/NotHammer043/nanoMIDIPlayer/total?style=for-the-badge)](https://github.com/NotHammer043/nanoMIDIPlayer/releases)  
 ---
 
 ## 🚀 Features  
