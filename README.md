@@ -1,7 +1,7 @@
 
 # 🎹 nanoMIDIPlayer  
 
-**nanoMIDIPlayer** is a lightweight MIDI player that can simulate **QWERTY keys** or send MIDI signals directly to output MIDI devices. Perfect for virtual piano games and MIDI playback.  
+**nanoMIDIPlayer** is a lightweight MIDI player that can simulate QWERTY keys or send MIDI signals directly to output MIDI devices. It also includes a Virtual Drums Macro.  
 
 ![GitHub stars](https://img.shields.io/github/stars/NotHammer043/nanoMIDIPlayer?style=for-the-badge)  
 ![GitHub license](https://img.shields.io/github/license/NotHammer043/nanoMIDIPlayer?style=for-the-badge)  
