@@ -2695,7 +2695,7 @@ class App(customtkinter.CTk):
         
         if not self.isRunning and not os_name == "Darwin":    
             self.drums_midi_file_path = self.drums_frame_entry_1.get()
-            print("nanoMIDI Drums2VK Translator v1.0 // Made by: hdsfgh")
+            print("nanoMIDI Drums2VK Translator v1.0 // Made by: fearsomeorc1406")
             self.isRunning = True
             self.CloseThread = False
 
