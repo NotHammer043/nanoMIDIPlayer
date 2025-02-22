@@ -5,3 +5,4 @@ pynput
 requests
 python-rtmidi
 pyinstaller
+keyboard
