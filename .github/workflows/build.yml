@@ -22,7 +22,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Build executable
-        uses: Martin005/pyinstaller-action@v1
+        uses: Martin005/pyinstaller-action@v1.2.0
         with:
           spec: nanoMIDIPlayer.py
           options: '--onefile, --icon=./assets/icon.png, --hidden-import=mido.backends.rtmidi, --noconsole'
