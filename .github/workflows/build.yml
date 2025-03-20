@@ -8,7 +8,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@4.2.2
+        uses: actions/checkout@4
 
       - name: Set up Python
         uses: actions/setup-python@v5.4.0
