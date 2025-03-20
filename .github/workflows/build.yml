@@ -3,7 +3,7 @@ name: Build Windows Executable
 on: [push]
 
 jobs:
-  pyinstaller-build:
+  build:
     runs-on: windows-latest
 
     steps:
@@ -13,23 +13,25 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.10'
+          architecture: 'x64'
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Create Executable
-        uses: Martin005/pyinstaller-action@v1.2.0
+      - name: Build executable
+        uses: Martin005/pyinstaller-action@v1
         with:
-          python_ver: '3.11'
-          spec: 'nanoMIDIPlayer.py'
-          requirements: 'requirements.txt'
-          upload_exe_with_name: 'nanoMIDIPlayer'
-          options: --onefile, --icon="./assets/icon.png", --hidden-import=mido.backends.rtmidi, --noconsole
+          spec: nanoMIDIPlayer.py
+          options: '--onefile, --icon=./assets/icon.png, --hidden-import=mido.backends.rtmidi, --noconsole'
+          python_ver: '3.10'
+          python_arch: 'x64'
+          upload_exe_with_name: 'nanoMIDIPlayer_executable'
 
-      - name: Upload Executable
+      - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: nanoMIDIPlayer
+          name: nanoMIDIPlayer.exe
           path: ./dist/nanoMIDIPlayer.exe
