@@ -29,7 +29,7 @@ jobs:
           options: --onefile, --icon="./assets/icon.png", --hidden-import=mido.backends.rtmidi, --noconsole
 
       - name: Upload Executable
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nanoMIDIPlayer
           path: ./dist/nanoMIDIPlayer.exe
