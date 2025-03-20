@@ -1,0 +1,31 @@
+name: Build Windows Executable
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller mido python-rtmidi
+
+      - name: Build executable
+        run: |
+          pyinstaller --onefile --icon="./assets/icon.png" --hidden-import=mido.backends.rtmidi --noconsole nanoMIDIPlayer.py
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v3
+        with:
+          name: nanoMIDIPlayer
+          path: dist/nanoMIDIPlayer.exe
