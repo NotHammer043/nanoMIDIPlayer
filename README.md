@@ -102,7 +102,7 @@ Special thanks to our **beta testers** and **suggesters**! 🎉
 ---
 
 ## ⭐ Star History  
-[![Star History Chart](https://api.star-history.com/svg?repos=NotHammer043/nanoMIDIPlayer&type=Date)](https://star-history.com/#NotHammer043/nanoMIDIPlayer&Date)  
+[![Star History Chart](https://api.star-history.com/svg?repos=NotHammer043/nanoMIDIPlayer&type=Date)](https://www.star-history.com/#NotHammer043/nanoMIDIPlayer&Date)  
 
 ---
 
