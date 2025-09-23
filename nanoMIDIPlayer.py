@@ -241,6 +241,9 @@ class App(customtkinter.CTk):
         self.themeNames = self.fetchThemes()
         self.currentTab = "home"
 
+        self.active_threads = []
+        self.thread_lock = threading.Lock()
+        
         self.drumsMap = {
             42: self.config_data['drumsMap']['closed_Hi-Hat'],      # Closed Hi-Hat
             44: self.config_data['drumsMap']['closed_Hi-Hat2'],     # Closed Hi-Hat #2
@@ -305,8 +308,8 @@ class App(customtkinter.CTk):
         }
 
         self.listener = None
-        threading.Thread(target=self.start_listener).start()
-
+        self.start_tracked_thread(target=self.start_listener, daemon=False)
+        
         parser = argparse.ArgumentParser(description='nanoMIDIPlayer')
         parser.add_argument('--debug', action='store_true', help='debug console')
         args = parser.parse_args()
@@ -316,6 +319,8 @@ class App(customtkinter.CTk):
             print("console opened.")
 
         super().__init__()
+        
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         if os_name == 'Windows':
             self.global_font = customtkinter.CTkFont(size=14, weight="bold", family=self.activeThemeData["Theme"]["GlobalFont"]["Windows"])
@@ -2292,10 +2297,13 @@ class App(customtkinter.CTk):
                         self.pause_event.wait()
                         elapsed_time = time.time() - start_time
 
+                        speed_factor = self.playback_speed / 100.0
+                        wait_time = msg.time / speed_factor
+                        
                         if self.config_data.get("randomFail"):
                             if random.random() < self.config_data["failType"]["speed"] / 100:
                                 playback_speed_factor = random.uniform(0.5, 1.5)
-                                time.sleep(msg.time * (100 / self.playback_speed) * playback_speed_factor)
+                                wait_time *= playback_speed_factor
                             elif random.random() < self.config_data["failType"]["transpose"] / 100:
                                 if hasattr(msg, 'note'):
                                     original_note = msg.note
@@ -2303,23 +2311,14 @@ class App(customtkinter.CTk):
                                     simulate_key("note_on", msg.note, msg.velocity)
                                     simulate_key("note_off", msg.note, msg.velocity)
                                     msg.note = original_note
-                                time.sleep(msg.time * (100 / self.playback_speed))
-                            else:
-                                time.sleep(msg.time * (100 / self.playback_speed))
-                        else:
-                            time.sleep(msg.time * (100 / self.playback_speed))
+                        
+                        if wait_time > 0:
+                            time.sleep(wait_time)
 
                         parse_midi(msg)
 
                         if self.CloseThread:
                             break
-
-                        self.CloseThread = False
-                        current_time = time.time()
-                        elapsed_time = current_time - start_time
-                        sleep_time = max(0, msg.time * (100 / self.playback_speed) - elapsed_time)
-                        time.sleep(sleep_time)
-                        start_time = current_time
 
                         current_position += msg.time * (100 / self.playback_speed)
                         current_time_str = time.strftime("%H:%M:%S", time.gmtime(current_position)).split(':')
@@ -2335,7 +2334,7 @@ class App(customtkinter.CTk):
                                 self.hasUpdated = False
 
                         if self.config_data['timestamp'] and not self.hasUpdated:
-                            threading.Thread(target=updatetimeline).start()
+                            self.start_tracked_thread(target=updatetimeline, daemon=True)
 
                     if self.config_data['loopSong'] and not self.CloseThread:
                         midi_playback()
@@ -2353,7 +2352,7 @@ class App(customtkinter.CTk):
                 except Exception as e:
                     print("Error: ", e)
 
-            threading.Thread(target=midi_playback, daemon=True).start()
+            self.start_tracked_thread(target=midi_playback, daemon=True)
 
         elif useMIDI:  # Use MIDI
             if not self.isRunning:
@@ -2385,18 +2384,19 @@ class App(customtkinter.CTk):
                                 self.pause_event.wait()
                                 elapsed_time = time.time() - start_time
 
+                                speed_factor = self.playback_speed / 100.0
+                                wait_time = msg.time / speed_factor
+                                
                                 if self.config_data.get("randomFail"):
                                     if random.random() < self.config_data["failType"]["speed"] / 100:
                                         playback_speed_factor = random.uniform(0.5, 1.5)
-                                        time.sleep(msg.time * (100 / self.playback_speed) * playback_speed_factor)
+                                        wait_time *= playback_speed_factor
                                     elif random.random() < self.config_data["failType"]["transpose"] / 100:
                                         if hasattr(msg, 'note'):
                                             msg.note += random.randint(-12, 12)
-                                            time.sleep(msg.time * (100 / self.playback_speed))
-                                    else:
-                                        time.sleep(msg.time * (100 / self.playback_speed))
-                                else:
-                                    time.sleep(msg.time * (100 / self.playback_speed))
+                                
+                                if wait_time > 0:
+                                    time.sleep(wait_time)
 
                                 if msg.type in ['note_on', 'note_off', 'control_change']:
                                     output.send(msg)
@@ -2408,12 +2408,6 @@ class App(customtkinter.CTk):
 
                                 if self.CloseThread:
                                     break
-
-                                current_time = time.time()
-                                elapsed_time = current_time - start_time
-                                sleep_time = max(0, msg.time * (100 / self.playback_speed) - elapsed_time)
-                                time.sleep(sleep_time)
-                                start_time = current_time
 
                                 current_position += msg.time * (100 / self.playback_speed)
                                 current_time_str = time.strftime("%H:%M:%S", time.gmtime(current_position)).split(':')
@@ -2429,7 +2423,7 @@ class App(customtkinter.CTk):
                                         self.hasUpdated = False
 
                                 if self.config_data['timestamp'] and not self.hasUpdated:
-                                    threading.Thread(target=updatetimeline).start()
+                                    self.start_tracked_thread(target=updatetimeline, daemon=True)
 
                         if self.config_data['loopSong'] and not self.CloseThread:
                             midi_playback()
@@ -2447,7 +2441,7 @@ class App(customtkinter.CTk):
                     except Exception as e:
                         print("Error: ", e)
 
-                threading.Thread(target=midi_playback, daemon=True).start()
+                self.start_tracked_thread(target=midi_playback, daemon=True)
 
         elif not useMIDI and not self.isRunning and os_name == "Darwin": # macOS MIDI2Qwerty [EXPERIMENTAL]
             print("Using MIDI2Qwerty - MACOS VERSION [EXPERIMENTAL]")
@@ -2624,30 +2618,24 @@ class App(customtkinter.CTk):
                         self.pause_event.wait()
                         elapsed_time = time.time() - start_time
 
+                        speed_factor = self.playback_speed / 100.0
+                        wait_time = msg.time / speed_factor
+                        
                         if self.config_data.get("randomFail"):
                             if random.random() < self.config_data["failType"]["speed"] / 100:
                                 playback_speed_factor = random.uniform(0.5, 1.5)
-                                time.sleep(msg.time * (100 / self.playback_speed) * playback_speed_factor)
+                                wait_time *= playback_speed_factor
                             elif random.random() < self.config_data["failType"]["transpose"] / 100:
                                 if hasattr(msg, 'note'):
                                     msg.note += random.randint(-12, 12)
-                                    time.sleep(msg.time * (100 / self.playback_speed))
-                            else:
-                                time.sleep(msg.time * (100 / self.playback_speed))
-                        else:
-                            time.sleep(msg.time * (100 / self.playback_speed))
+                        
+                        if wait_time > 0:
+                            time.sleep(wait_time)
 
                         parse_midi(msg)
 
                         if self.CloseThread:
                             break
-
-                        self.CloseThread = False
-                        current_time = time.time()
-                        elapsed_time = current_time - start_time
-                        sleep_time = max(0, msg.time * (100 / self.playback_speed) - elapsed_time)
-                        time.sleep(sleep_time)
-                        start_time = current_time
 
                         current_position += msg.time * (100 / self.playback_speed)
                         current_time_str = time.strftime("%H:%M:%S", time.gmtime(current_position)).split(':')
@@ -2664,7 +2652,7 @@ class App(customtkinter.CTk):
                                 self.hasUpdated = False
 
                         if self.config_data['timestamp'] and not self.hasUpdated:
-                            threading.Thread(target=updatetimeline).start()
+                            self.start_tracked_thread(target=updatetimeline, daemon=True)
 
                     if self.config_data['loopSong'] and not self.CloseThread:
                         midi_playback()
@@ -2764,7 +2752,7 @@ class App(customtkinter.CTk):
                                 self.hasUpdated = False
 
                         if self.config_data['timestamp'] and not self.hasUpdated:
-                            threading.Thread(target=updatetimeline).start()
+                            self.start_tracked_thread(target=updatetimeline, daemon=True)
 
                     if self.config_data['loopSong'] and not self.CloseThread:
                         print("repeat")
@@ -2856,7 +2844,7 @@ class App(customtkinter.CTk):
                                 self.hasUpdated = False
 
                         if self.config_data['timestamp'] and not self.hasUpdated:
-                            threading.Thread(target=updatetimeline).start()
+                            self.start_tracked_thread(target=updatetimeline, daemon=True)
 
                     if self.config_data['loopSong'] and not self.CloseThread:
                         print("repeat")
@@ -2877,7 +2865,7 @@ class App(customtkinter.CTk):
                 except Exception as e:
                     print(e)
 
-        threading.Thread(target=play_midi, daemon=True).start()
+        self.start_tracked_thread(target=play_midi, daemon=True)
 
     def pause_playback(self, event=None):
         if self.currentTab == "home":
@@ -3149,6 +3137,57 @@ class App(customtkinter.CTk):
             print(e)
             return []
         
+    def start_tracked_thread(self, target, args=(), daemon=True):
+        with self.thread_lock:
+            thread = threading.Thread(target=target, args=args, daemon=daemon)
+            self.active_threads.append(thread)
+            thread.start()
+            return thread
+    
+    def cleanup_finished_threads(self):
+        with self.thread_lock:
+            self.active_threads = [t for t in self.active_threads if t.is_alive()]
+    
+    def on_closing(self):
+        try:
+            if hasattr(self, 'listener') and self.listener:
+                self.listener.stop()
+                print("Keyboard listener stopped")
+            
+            if hasattr(self, 'isRunning') and self.isRunning:
+                self.CloseThread = True
+                self.pause_event.set()
+            
+            if hasattr(self, 'pressed_keys') and self.pressed_keys:
+                for key in list(self.pressed_keys):
+                    try:
+                        self.keyboard_controller.release(key)
+                    except:
+                        pass
+                self.pressed_keys.clear()
+            
+            if hasattr(self, 'keyboard_queue'):
+                try:
+                    while not self.keyboard_queue.empty():
+                        self.keyboard_queue.get_nowait()
+                except:
+                    pass
+            
+            if hasattr(self, 'active_threads'):
+                with self.thread_lock:
+                    active_count = len([t for t in self.active_threads if t.is_alive()])
+                    if active_count > 0:
+                        print(f"Waiting for {active_count} threads to finish...")
+                        for thread in self.active_threads:
+                            if thread.is_alive() and not thread.daemon:
+                                thread.join(timeout=2.0)
+            
+            print("Application cleanup completed")
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+        finally:
+            self.destroy()
+    
     def CreateToolTip(self, widget, text):
         if not os_name == "Darwin":
             toolTip = ToolTip(widget)
