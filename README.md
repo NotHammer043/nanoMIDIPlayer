@@ -1,3 +1,6 @@
+<img width="804" height="249" alt="banner" src="https://github.com/user-attachments/assets/3dfe0455-59c8-4cc5-a4a8-ac8704671963" />
+
+
 
 # 🎹 nanoMIDIPlayer  
 
