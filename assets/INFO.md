@@ -34,7 +34,7 @@
 | Beta Testers | Suggesters |
 |--------------|------------|
 | [**<u>Floofy</u>**](https://discord.com/users/966112150915518474) :profile-966112150915518474: | [**<u>fearsomeorc1406</u>**](https://discord.com/users/1292364099581116416) :profile-1292364099581116416: |
-| [**<u>yournightmare5005</u>**](https://discord.com/users/608557546617176084) :profile-608557546617176084: | [**<u>youwontfindmymain_89866</u>**](https://discord.com/users/1248542802879578112) :profile-1248542802879578112: |
+| [**<u>yournightmare5005</u>**](https://discord.com/users/608557546617176084) :profile-608557546617176084: | [**<u>youwontfindmymain</u>**](https://discord.com/users/1248542802879578112) :profile-1248542802879578112: |
 | [**<u>koji_xyz</u>**](https://discord.com/users/541806183858569226) :profile-541806183858569226: | [**<u>star.tism</u>**](https://discord.com/users/714699906392129626) :profile-714699906392129626: |
 | [**<u>sebx.s_</u>**](https://discord.com/users/1196546791705939978) :profile-1196546791705939978: | [**<u>hdsfgh</u>**](https://discord.com/users/739301556805042207) :profile-739301556805042207: |
 | [**<u>bkiiz3</u>**](https://discord.com/users/1234466733767524418) :profile-1234466733767524418: | [**<u>somecoolname2</u>**](https://discord.com/users/1160579679992946759) :profile-1160579679992946759: |
