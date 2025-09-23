@@ -1,6 +1,7 @@
 <img width="804" height="249" alt="banner" src="https://github.com/user-attachments/assets/3dfe0455-59c8-4cc5-a4a8-ac8704671963" />
 <img width="32" height="32" alt="aZdziwkryKjF" src="https://github.com/user-attachments/assets/065003ea-0cfc-410a-b0f2-d11ce60426b2" />
 <img width="32" height="32" alt="paypal" src="https://github.com/user-attachments/assets/15cf897f-90c6-4ca5-aa58-64004ab0c9ce" />
+<img width="804" height="249" alt="nanoMIDIPlayerBanner" src="https://github.com/user-attachments/assets/11ad7c4c-8c80-4198-8883-38df2a6461fb" />
 
 
 
