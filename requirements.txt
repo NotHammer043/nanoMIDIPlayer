@@ -1,8 +1,0 @@
-customtkinter
-Pillow
-mido
-pynput
-requests
-python-rtmidi
-pyinstaller
-keyboard
