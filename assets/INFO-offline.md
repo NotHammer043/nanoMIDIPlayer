@@ -9,4 +9,4 @@
 
 ## Questions or Issues  
 **Create a ticket on our Discord:** 
-[![Discord](:DISCORD_BUTTON:)](https://nanomidi.net/discord)  
+[nanoMIDI Discord Server](https://nanomidi.net/discord)  
