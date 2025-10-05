@@ -32,7 +32,7 @@ pyinstaller --onefile --noconsole --noconfirm \
   --add-data="assets:assets" \
   --paths="." \
   --name="nanoMIDIPlayer" \
-  --icon="assets/icons/integrated/icon.ico" \
+  --icon="assets/icons/integrated/icon.icns" \
   main.py
 
 echo "=> Setting executable permissions..."
@@ -54,7 +54,7 @@ rm -f "$DMG_PATH"
 echo "=> Creating DMG at $DMG_PATH..."
 create-dmg \
   --volname "nanoMIDIPlayer" \
-  --volicon "assets/icons/integrated/icon.ico" \
+  --volicon "assets/icons/integrated/icon.icns" \
   --background "assets/icons/integrated/dmgbackground.png" \
   --window-pos 200 120 \
   --window-size 625 400 \
