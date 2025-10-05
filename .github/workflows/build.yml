@@ -9,29 +9,22 @@ jobs:
   build-macos-intel:
     runs-on: macos-13
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Homebrew and dependencies
-        run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
-          echo "export PATH=/usr/local/bin:/opt/homebrew/bin:$PATH" >> $GITHUB_ENV
-          brew update
-          brew install python@3.11 create-dmg tcl-tk
-          echo "export PATH=$(brew --prefix python@3.11)/bin:$PATH" >> $GITHUB_ENV
-          echo "export LDFLAGS=\"-L$(brew --prefix tcl-tk)/lib\"" >> $GITHUB_ENV
-          echo "export CPPFLAGS=\"-I$(brew --prefix tcl-tk)/include\"" >> $GITHUB_ENV
-          echo "export PKG_CONFIG_PATH=\"$(brew --prefix tcl-tk)/lib/pkgconfig\"" >> $GITHUB_ENV
-          echo "export PATH=\"$(brew --prefix tcl-tk)/bin:$PATH\"" >> $GITHUB_ENV
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-      - name: Setup Python environment
+      - name: Install dependencies
         run: |
+          brew install create-dmg tcl-tk
           python3 -m venv venv
           source venv/bin/activate
-          python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install -r requirements.txt pyinstaller customtkinter
+          pip install --upgrade pip setuptools wheel
+          pip install pyinstaller customtkinter
+          pip install -r requirements.txt
 
-      - name: Verify Tkinter
+      - name: Verify Tkinter availability
         run: |
           source venv/bin/activate
           python3 - <<'PYCODE'
@@ -53,29 +46,22 @@ jobs:
   build-macos-arm:
     runs-on: macos-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Homebrew and dependencies
-        run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
-          echo "export PATH=/usr/local/bin:/opt/homebrew/bin:$PATH" >> $GITHUB_ENV
-          brew update
-          brew install python@3.11 create-dmg tcl-tk
-          echo "export PATH=$(brew --prefix python@3.11)/bin:$PATH" >> $GITHUB_ENV
-          echo "export LDFLAGS=\"-L$(brew --prefix tcl-tk)/lib\"" >> $GITHUB_ENV
-          echo "export CPPFLAGS=\"-I$(brew --prefix tcl-tk)/include\"" >> $GITHUB_ENV
-          echo "export PKG_CONFIG_PATH=\"$(brew --prefix tcl-tk)/lib/pkgconfig\"" >> $GITHUB_ENV
-          echo "export PATH=\"$(brew --prefix tcl-tk)/bin:$PATH\"" >> $GITHUB_ENV
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-      - name: Setup Python environment
+      - name: Install dependencies
         run: |
+          brew install create-dmg tcl-tk
           python3 -m venv venv
           source venv/bin/activate
-          python3 -m pip install --upgrade pip setuptools wheel
-          python3 -m pip install -r requirements.txt pyinstaller customtkinter
+          pip install --upgrade pip setuptools wheel
+          pip install pyinstaller customtkinter
+          pip install -r requirements.txt
 
-      - name: Verify Tkinter
+      - name: Verify Tkinter availability
         run: |
           source venv/bin/activate
           python3 - <<'PYCODE'
@@ -97,8 +83,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
@@ -112,7 +97,7 @@ jobs:
           chmod +x ./scripts/build-lnx.sh
           ./scripts/build-lnx.sh
 
-      - name: Upload Linux Artifacts
+      - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
@@ -123,23 +108,21 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel pyinstaller
           python -m pip install -r requirements.txt
 
-      - name: Build Windows EXE
+      - name: Build Windows exe
         run: ./scripts/build-win.bat
 
-      - name: Upload Windows EXE
+      - name: Upload Windows exe
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
@@ -149,10 +132,10 @@ jobs:
     needs: [build-macos-intel, build-macos-arm, build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
-      - name: Display Build Summary
+      - name: Display build summary
         run: |
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "- macOS Intel DMG: [macOS-Intel](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
           echo "- macOS ARM DMG: [macOS-ARM](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          echo "- Linux Build: [linux-build](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux TAR.GZ & Binary: [linux-build](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
           echo "- Windows EXE: [windows-exe](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
