@@ -36,7 +36,6 @@ jobs:
         run: |
           chmod +x ./scripts/build-mac.sh
           ./scripts/build-mac.sh --arch intel
-          mv dist/nanoMIDIPlayer.dmg dist/nanoMIDIPlayer-Intel.dmg
 
       - name: Upload macOS Intel DMG
         uses: actions/upload-artifact@v4
@@ -74,7 +73,6 @@ jobs:
         run: |
           chmod +x ./scripts/build-mac.sh
           ./scripts/build-mac.sh --arch arm
-          mv dist/nanoMIDIPlayer.dmg dist/nanoMIDIPlayer-ARM.dmg
 
       - name: Upload macOS ARM DMG
         uses: actions/upload-artifact@v4
@@ -139,5 +137,5 @@ jobs:
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "- macOS Intel DMG: [macOS-Intel](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
           echo "- macOS ARM DMG: [macOS-ARM](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          echo "- Linux TAR.GZ & Binary: [linux-build](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux Build: [linux-build](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
           echo "- Windows EXE: [windows-exe](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
