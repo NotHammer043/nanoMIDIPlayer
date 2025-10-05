@@ -19,6 +19,8 @@ venv-mac/bin/pip install -r requirements.txt
 echo "=> Running PyInstaller to create .app package..."
 pyinstaller --onefile --noconsole --noconfirm \
     --hidden-import=mido.backends.rtmidi \
+    --hidden-import=tkinter \
+    --hidden-import=_tkinter \
     --add-data="assets:assets" \
     --paths="." \
     --name="nanoMIDIPlayer" \
