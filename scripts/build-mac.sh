@@ -1,71 +1,80 @@
 #!/bin/bash
 set -e
 
-ARCH="arm64"
-if [[ "$1" == "--arch" && -n "$2" ]]; then
-  ARCH="$2"
+ARCH="arm"
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --arch)
+            ARCH="$2"
+            shift 2
+            ;;
+        *)
+            echo "Usage: $0 --arch [intel|arm]"
+            exit 1
+            ;;
+    esac
+done
+
+if [[ "$ARCH" != "intel" && "$ARCH" != "arm" ]]; then
+    echo "Invalid architecture: $ARCH"
+    exit 1
 fi
 
-echo "=> Building for architecture: $ARCH"
+echo "Building nanoMIDIPlayer for macOS ($ARCH)"
 
-echo "=> Cleaning up previous builds..."
-rm -rf ./build/ ./dist/ ./__pycache__ *.spec
+rm -rf ./build ./dist ./venv-mac
 mkdir -p build dist
 
-if [ ! -d "venv-mac" ]; then
-  echo "=> Creating virtual environment..."
-  python3 -m venv venv-mac
+python3 -m venv venv-mac
+source ./venv-mac/bin/activate
+pip install --upgrade pip setuptools wheel pyinstaller
+pip install -r requirements.txt
+
+if [[ "$ARCH" == "intel" ]]; then
+    TARGET_ARCH="x86_64"
+    APP_NAME="nanoMIDIPlayer-Intel"
+    DMG_NAME="nanoMIDIPlayer-Intel.dmg"
+else
+    TARGET_ARCH="arm64"
+    APP_NAME="nanoMIDIPlayer-ARM"
+    DMG_NAME="nanoMIDIPlayer-ARM.dmg"
 fi
 
-echo "=> Activating virtual environment..."
-source ./venv-mac/bin/activate
-
-echo "=> Installing dependencies via pip..."
-pip install --upgrade pip setuptools wheel pyinstaller
-pip install -r requirements.txt customtkinter
-
-echo "=> Running PyInstaller to create .app package..."
 pyinstaller --onefile --noconsole --noconfirm \
-  --hidden-import=mido.backends.rtmidi \
-  --hidden-import=tkinter \
-  --hidden-import=_tkinter \
-  --add-data="assets:assets" \
-  --paths="." \
-  --name="nanoMIDIPlayer" \
-  --icon="assets/icons/integrated/icon.icns" \
-  main.py
+    --target-architecture "$TARGET_ARCH" \
+    --hidden-import=mido.backends.rtmidi \
+    --hidden-import=tkinter \
+    --hidden-import=_tkinter \
+    --add-data="assets:assets" \
+    --paths="." \
+    --name="$APP_NAME" \
+    --icon="assets/icons/integrated/icon.ico" \
+    main.py
 
-echo "=> Setting executable permissions..."
-chmod +x dist/nanoMIDIPlayer || true
-
-echo "=> Preparing DMG staging directory..."
-mkdir -p dist/macOS-dmg
-mv dist/nanoMIDIPlayer dist/macOS-dmg/nanoMIDIPlayer.app
-ln -sf /Applications dist/macOS-dmg/
+chmod +x dist/$APP_NAME.app
+mkdir -p dist/macOS-$ARCH
+mv dist/$APP_NAME.app dist/macOS-$ARCH/
+ln -s /Applications dist/macOS-$ARCH || true
 
 if ! command -v create-dmg &> /dev/null; then
-  echo "=> create-dmg not found in PATH. Please ensure it is installed by CI."
-  exit 1
+    brew install create-dmg
 fi
 
-DMG_PATH="dist/nanoMIDIPlayer-${ARCH}.dmg"
-rm -f "$DMG_PATH"
+rm -f dist/$DMG_NAME
 
-echo "=> Creating DMG at $DMG_PATH..."
 create-dmg \
-  --volname "nanoMIDIPlayer" \
-  --volicon "assets/icons/integrated/icon.icns" \
-  --background "assets/icons/integrated/dmgbackground.png" \
-  --window-pos 200 120 \
-  --window-size 625 400 \
-  --icon-size 128 \
-  --icon "nanoMIDIPlayer.app" 150 200 \
-  --hide-extension "nanoMIDIPlayer.app" \
-  --app-drop-link 475 200 \
-  "$DMG_PATH" \
-  "dist/macOS-dmg"
+    --volname "$APP_NAME" \
+    --volicon "assets/icons/integrated/icon.ico" \
+    --background "assets/icons/integrated/dmgbackground.png" \
+    --window-pos 200 120 \
+    --window-size 625 400 \
+    --icon-size 128 \
+    --icon "$APP_NAME.app" 150 200 \
+    --hide-extension "$APP_NAME.app" \
+    --app-drop-link 475 200 \
+    "dist/$DMG_NAME" \
+    "dist/macOS-$ARCH/$APP_NAME.app"
 
-echo "=> Cleaning up temporary files..."
-rm -rf build __pycache__ *.spec venv-mac
-
-echo "=> Done! DMG available at $DMG_PATH"
+rm -rf __pycache__ build venv-mac *.spec
+echo "Build complete: dist/$DMG_NAME"

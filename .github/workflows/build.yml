@@ -6,94 +6,93 @@ on:
   pull_request:
 
 jobs:
-  build-macos-arm64:
-    name: Build macOS (Apple Silicon)
-    runs-on: macos-latest
+  build-macos-intel:
+    runs-on: macos-13
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python (with Tkinter)
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Install Homebrew and dependencies
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
+          echo "export PATH=/usr/local/bin:/opt/homebrew/bin:$PATH" >> $GITHUB_ENV
+          brew update
+          brew install python@3.11 create-dmg tcl-tk
+          echo "export PATH=$(brew --prefix python@3.11)/bin:$PATH" >> $GITHUB_ENV
+          echo "export LDFLAGS=\"-L$(brew --prefix tcl-tk)/lib\"" >> $GITHUB_ENV
+          echo "export CPPFLAGS=\"-I$(brew --prefix tcl-tk)/include\"" >> $GITHUB_ENV
+          echo "export PKG_CONFIG_PATH=\"$(brew --prefix tcl-tk)/lib/pkgconfig\"" >> $GITHUB_ENV
+          echo "export PATH=\"$(brew --prefix tcl-tk)/bin:$PATH\"" >> $GITHUB_ENV
 
-      - name: Install dependencies
+      - name: Setup Python environment
         run: |
           python3 -m venv venv
           source venv/bin/activate
-          python3 -m pip install --upgrade pip setuptools wheel pyinstaller
-          python3 -m pip install -r requirements.txt customtkinter
-          brew install create-dmg
+          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install -r requirements.txt pyinstaller customtkinter
 
       - name: Verify Tkinter
         run: |
           source venv/bin/activate
           python3 - <<'PYCODE'
           import tkinter
-          print("Tkinter found (ARM64):", tkinter.TkVersion)
+          print("Tkinter version:", tkinter.TkVersion)
           PYCODE
 
-      - name: Build macOS ARM64 app
+      - name: Build macOS Intel DMG
         run: |
-          source venv/bin/activate
           chmod +x ./scripts/build-mac.sh
-          ./scripts/build-mac.sh --arch arm64
+          ./scripts/build-mac.sh --arch intel
 
-      - name: Upload ARM64 DMG
+      - name: Upload macOS Intel DMG
         uses: actions/upload-artifact@v4
         with:
-          name: macOS-arm64-dmg
-          path: dist/*.dmg
+          name: macOS-Intel
+          path: dist/nanoMIDIPlayer-Intel.dmg
 
-  build-macos-x86_64:
-    name: Build macOS (Intel)
+  build-macos-arm:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python (with Tkinter)
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          
-      - name: Install Rosetta and x86_64 Homebrew
+      - name: Install Homebrew and dependencies
         run: |
-          sudo softwareupdate --install-rosetta --agree-to-license
-          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          echo 'eval "$(/usr/local/homebrew/bin/brew shellenv)"' >> $HOME/.zprofile
-          eval "$(/usr/local/homebrew/bin/brew shellenv)"
-          echo "/usr/local/homebrew/bin" >> $GITHUB_PATH
-          arch -x86_64 brew install create-dmg
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
+          echo "export PATH=/usr/local/bin:/opt/homebrew/bin:$PATH" >> $GITHUB_ENV
+          brew update
+          brew install python@3.11 create-dmg tcl-tk
+          echo "export PATH=$(brew --prefix python@3.11)/bin:$PATH" >> $GITHUB_ENV
+          echo "export LDFLAGS=\"-L$(brew --prefix tcl-tk)/lib\"" >> $GITHUB_ENV
+          echo "export CPPFLAGS=\"-I$(brew --prefix tcl-tk)/include\"" >> $GITHUB_ENV
+          echo "export PKG_CONFIG_PATH=\"$(brew --prefix tcl-tk)/lib/pkgconfig\"" >> $GITHUB_ENV
+          echo "export PATH=\"$(brew --prefix tcl-tk)/bin:$PATH\"" >> $GITHUB_ENV
 
-
-      - name: Create venv and install deps (x86_64)
+      - name: Setup Python environment
         run: |
-          arch -x86_64 python3 -m venv venv
+          python3 -m venv venv
           source venv/bin/activate
-          arch -x86_64 python3 -m pip install --upgrade pip setuptools wheel pyinstaller
-          arch -x86_64 python3 -m pip install -r requirements.txt customtkinter
+          python3 -m pip install --upgrade pip setuptools wheel
+          python3 -m pip install -r requirements.txt pyinstaller customtkinter
 
-      - name: Verify Tkinter (x86_64)
+      - name: Verify Tkinter
         run: |
           source venv/bin/activate
-          arch -x86_64 python3 - <<'PYCODE'
+          python3 - <<'PYCODE'
           import tkinter
-          print("Tkinter found (x86_64):", tkinter.TkVersion)
+          print("Tkinter version:", tkinter.TkVersion)
           PYCODE
 
-      - name: Build macOS x86_64 app
+      - name: Build macOS ARM DMG
         run: |
-          source venv/bin/activate
           chmod +x ./scripts/build-mac.sh
-          arch -x86_64 ./scripts/build-mac.sh --arch x86_64
+          ./scripts/build-mac.sh --arch arm
 
-      - name: Upload x86_64 DMG
+      - name: Upload macOS ARM DMG
         uses: actions/upload-artifact@v4
         with:
-          name: macOS-x86_64-dmg
-          path: dist/*.dmg
+          name: macOS-ARM
+          path: dist/nanoMIDIPlayer-ARM.dmg
 
   build-linux:
     runs-on: ubuntu-latest
@@ -106,13 +105,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3 python3-venv python3-tk python3-pip build-essential
           python3 -m pip install --upgrade pip setuptools wheel pyinstaller
+          python3 -m pip install -r requirements.txt
 
       - name: Build Linux binary
         run: |
           chmod +x ./scripts/build-lnx.sh
           ./scripts/build-lnx.sh
 
-      - name: Upload Linux artifacts
+      - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
@@ -129,30 +129,30 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel pyinstaller
           python -m pip install -r requirements.txt
 
-      - name: Build Windows exe
+      - name: Build Windows EXE
         run: ./scripts/build-win.bat
 
-      - name: Upload Windows exe
+      - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
           path: dist/*.exe
 
   summary:
-    needs: [build-macos-arm64, build-macos-x86_64, build-linux, build-windows]
+    needs: [build-macos-intel, build-macos-arm, build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
-      - name: Display build summary
+      - name: Display Build Summary
         run: |
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- macOS ARM64 DMG: [macOS-arm64-dmg](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          echo "- macOS x86_64 DMG: [macOS-x86_64-dmg](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          echo "- Linux TAR.GZ & Binary: [linux-build](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS Intel DMG: [macOS-Intel](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS ARM DMG: [macOS-ARM](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux Build: [linux-build](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
           echo "- Windows EXE: [windows-exe](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
