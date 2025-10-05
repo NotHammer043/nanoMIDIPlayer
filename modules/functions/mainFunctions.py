@@ -310,24 +310,25 @@ def setHotkey(keyType):
         if hotkeyButtonActive:
             finishHotkey(event.name)
 
-    def onKeyPressPynput(key):
+    def onKeyPressShared(keyName):
         if hotkeyButtonActive:
-            try:
-                if hasattr(key, "char") and key.char:
-                    newHotkey = key.char.lower()
-                else:
-                    newHotkey = str(key).replace("Key.", "").lower()
-                finishHotkey(newHotkey)
-            except Exception as e:
-                logger.debug(f"onKeyPressPynput error: {e}")
-            return False
+            finishHotkey(keyName.lower())
 
     if osName == "Windows":
         hotkeyHook = keyboard.on_press(onKeyPressWindows)
     else:
-        listener = pynputKeyboard.Listener(on_press=onKeyPressPynput)
-        listener.start()
-
+        from modules.functions import mainFunctions
+        mainFunctions.activeHotkeys.clear()
+        for key in ["A", "B", "C", "D", "E", "F", "G",
+                    "H", "I", "J", "K", "L", "M", "N",
+                    "O", "P", "Q", "R", "S", "T", "U",
+                    "V", "W", "X", "Y", "Z",
+                    "SPACE", "ESC", "RETURN",
+                    "F1", "F2", "F3", "F4", "F5",
+                    "F6", "F7", "F8", "F9", "F10",
+                    "F11", "F12"]:
+            mainFunctions.activeHotkeys[key] = lambda k=key: onKeyPressShared(k)
+        mainFunctions.startGlobalListener()
 
 def refreshOutputDevices():
     logger.debug("refreshOutputDevices")

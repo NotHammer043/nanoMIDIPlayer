@@ -6,16 +6,17 @@ on:
   pull_request:
 
 jobs:
-  build-macos:
+  build-macos-arm64:
+    name: Build macOS (Apple Silicon)
     runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python (with Tkinter support)
+      - name: Setup Python (with Tkinter)
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'  # or 3.12 — both from python.org include Tkinter
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
@@ -24,26 +25,70 @@ jobs:
           python3 -m pip install --upgrade pip setuptools wheel pyinstaller
           python3 -m pip install -r requirements.txt customtkinter
 
-      - name: Verify Tkinter availability
+      - name: Verify Tkinter
         run: |
           source venv/bin/activate
           python3 - <<'PYCODE'
           import tkinter
-          print("Tkinter found:", tkinter.TkVersion)
+          print("Tkinter found (ARM64):", tkinter.TkVersion)
           PYCODE
 
-      - name: Build macOS dmg
+      - name: Build macOS ARM64 app
         run: |
           source venv/bin/activate
           chmod +x ./scripts/build-mac.sh
-          ./scripts/build-mac.sh
+          ./scripts/build-mac.sh --arch arm64
 
-      - name: Upload macOS dmg
+      - name: Upload ARM64 DMG
         uses: actions/upload-artifact@v4
         with:
-          name: macOS-dmg
-          path: dist/nanoMIDIPlayer.dmg
-          
+          name: macOS-arm64-dmg
+          path: dist/nanoMIDIPlayer-arm64.dmg
+
+  build-macos-x86_64:
+    name: Build macOS (Intel)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python (with Tkinter)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Rosetta and dependencies
+        run: |
+          sudo softwareupdate --install-rosetta --agree-to-license
+          arch -x86_64 /usr/bin/python3 -m ensurepip || true
+
+      - name: Create venv and install deps (x86_64)
+        run: |
+          arch -x86_64 python3 -m venv venv
+          source venv/bin/activate
+          arch -x86_64 python3 -m pip install --upgrade pip setuptools wheel pyinstaller
+          arch -x86_64 python3 -m pip install -r requirements.txt customtkinter
+
+      - name: Verify Tkinter (x86_64)
+        run: |
+          source venv/bin/activate
+          arch -x86_64 python3 - <<'PYCODE'
+          import tkinter
+          print("Tkinter found (x86_64):", tkinter.TkVersion)
+          PYCODE
+
+      - name: Build macOS x86_64 app
+        run: |
+          source venv/bin/activate
+          chmod +x ./scripts/build-mac.sh
+          arch -x86_64 ./scripts/build-mac.sh --arch x86_64
+
+      - name: Upload x86_64 DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-x86_64-dmg
+          path: dist/nanoMIDIPlayer-x86_64.dmg
+
   build-linux:
     runs-on: ubuntu-latest
     steps:
@@ -95,12 +140,13 @@ jobs:
           path: dist/*.exe
 
   summary:
-    needs: [build-macos, build-linux, build-windows]
+    needs: [build-macos-arm64, build-macos-x86_64, build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Display build summary
         run: |
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- macOS DMG: [macOS-dmg](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS ARM64 DMG: [macOS-arm64-dmg](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS x86_64 DMG: [macOS-x86_64-dmg](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
           echo "- Linux TAR.GZ & Binary: [linux-build](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
           echo "- Windows EXE: [windows-exe](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
