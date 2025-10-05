@@ -57,14 +57,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
+          
       - name: Install Rosetta and x86_64 Homebrew
         run: |
           sudo softwareupdate --install-rosetta --agree-to-license
           arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           echo 'eval "$(/usr/local/homebrew/bin/brew shellenv)"' >> $HOME/.zprofile
           eval "$(/usr/local/homebrew/bin/brew shellenv)"
+          echo "/usr/local/homebrew/bin" >> $GITHUB_PATH
           arch -x86_64 brew install create-dmg
+
 
       - name: Create venv and install deps (x86_64)
         run: |
