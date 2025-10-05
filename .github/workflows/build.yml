@@ -12,17 +12,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Homebrew
+      - name: Install Homebrew and dependencies
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
           echo "export PATH=/usr/local/bin:/opt/homebrew/bin:$PATH" >> $GITHUB_ENV
+          brew install python create-dmg tcl-tk
 
-      - name: Install dependencies
+      - name: Create virtual environment and install dependencies
         run: |
-          brew install python create-dmg
-          python3 -m ensurepip --upgrade
+          python3 -m venv venv
+          source venv/bin/activate
           python3 -m pip install --upgrade pip setuptools wheel
-          brew install tcl-tk
+          python3 -m pip install -r requirements.txt pyinstaller
 
       - name: Build macOS dmg
         run: |
