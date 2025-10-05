@@ -2,7 +2,7 @@ name: Build Cross-Platform Artifacts
 
 on:
   push:
-    branches: [ main ]
+    branches: [ beta ]
   pull_request:
 
 jobs:
