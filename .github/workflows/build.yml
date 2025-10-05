@@ -12,29 +12,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Homebrew and dependencies
-        run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
-          echo "export PATH=/usr/local/bin:/opt/homebrew/bin:$PATH" >> $GITHUB_ENV
-          brew install python create-dmg tcl-tk
+      - name: Setup Python (with Tkinter support)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'  # or 3.12 — both from python.org include Tkinter
 
-      - name: Configure Tcl/Tk for Python
+      - name: Install dependencies
         run: |
-          # Tell Python where Tcl/Tk is installed (important for Tkinter)
-          echo "export TK_FRAMEWORK_PATH=$(brew --prefix tcl-tk)" >> $GITHUB_ENV
-          echo "export LDFLAGS=\"-L$(brew --prefix tcl-tk)/lib\"" >> $GITHUB_ENV
-          echo "export CPPFLAGS=\"-I$(brew --prefix tcl-tk)/include\"" >> $GITHUB_ENV
-          echo "export PKG_CONFIG_PATH=\"$(brew --prefix tcl-tk)/lib/pkgconfig\"" >> $GITHUB_ENV
-          echo "export PATH=\"$(brew --prefix tcl-tk)/bin:$PATH\"" >> $GITHUB_ENV
-
-      - name: Create virtual environment and install dependencies
-        run: |
-          source $GITHUB_ENV
           python3 -m venv venv
           source venv/bin/activate
           python3 -m pip install --upgrade pip setuptools wheel pyinstaller
-          python3 -m pip install -r requirements.txt
-          python3 -m pip install customtkinter
+          python3 -m pip install -r requirements.txt customtkinter
 
       - name: Verify Tkinter availability
         run: |
