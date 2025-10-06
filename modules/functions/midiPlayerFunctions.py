@@ -6,16 +6,16 @@ import platform
 import datetime
 import keyboard
 import logging
+
 from tkinter import filedialog
 from mido import MidiFile
-
 from pynput import keyboard as pynputKeyboard
 from modules import configuration
-from modules.functions import mainFunctions
+
 from ui.midiPlayer import MidiPlayerTab
 from ui.settings import SettingsTab
 from ui import customTheme
-
+from modules.functions import mainFunctions
 from modules.midiHandler import useOutput
 
 logger = logging.getLogger(__name__)

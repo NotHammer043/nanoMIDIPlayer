@@ -20,7 +20,6 @@ from ui.midiPlayer import MidiPlayerTab
 from ui.drumsMacro import DrumsMacroTab
 from ui.midiToQWERTY import MidiToQwertyTab
 from ui.settings import SettingsTab
-from modules.functions import mainFunctions
 
 osName = platform.system()
 appInstance = None
@@ -89,7 +88,7 @@ def logWorker():
         except Exception as e:
             logger.error(f"logWorker error: {e}")
             continue
-        mainFunctions.insertConsoleText(msg, False)
+        insertConsoleText(msg, False)
         time.sleep(logCooldown)
 
 def log(string):
@@ -198,15 +197,13 @@ def clearConsole(app=None):
         app.logLabels.clear()
     consoleLocation.update_idletasks()
 
-def tabBind(tab, app=None):
+def tabBind(tab):
     logger.info(f"tabBind: {tab}")
     clearConsole()
-    app = app or getApp()
     from modules.functions import midiPlayerFunctions
     from modules.functions import drumsMacroFunctions
     from modules.functions import midiHubFunctions
     from ui.midiHub import MidiHubTab
-    from modules.functions import mainFunctions
 
     if osName == "Windows":
         if tab == 0:
@@ -214,7 +211,7 @@ def tabBind(tab, app=None):
             midiPlayerFunctions.bindControls()
             MidiHubTab.searchEntry.unbind("<Return>")
         elif tab == 1:
-            threading.Thread(target=mainFunctions.insertConsoleText, args=("Note: This will only work if your MIDI file specifically uses a drum instrument.", True)).start()
+            threading.Thread(target=insertConsoleText, args=("Note: This will only work if your MIDI file specifically uses a drum instrument.", True)).start()
             midiPlayerFunctions.unbindControls()
             drumsMacroFunctions.bindControls()
             MidiHubTab.searchEntry.unbind("<Return>")
@@ -232,7 +229,7 @@ def tabBind(tab, app=None):
             midiPlayerFunctions.bindControls()
             MidiHubTab.searchEntry.unbind("<Return>")
         elif tab == 1:
-            threading.Thread(target=mainFunctions.insertConsoleText, args=("Note: This will only work if your MIDI file specifically uses a drum instrument.", True)).start()
+            threading.Thread(target=insertConsoleText, args=("Note: This will only work if your MIDI file specifically uses a drum instrument.", True)).start()
             drumsMacroFunctions.bindControls()
             MidiHubTab.searchEntry.unbind("<Return>")
         elif tab == 2:
@@ -317,8 +314,7 @@ def setHotkey(keyType):
     if osName == "Windows":
         hotkeyHook = keyboard.on_press(onKeyPressWindows)
     else:
-        from modules.functions import mainFunctions
-        mainFunctions.activeHotkeys.clear()
+        activeHotkeys.clear()
         for key in ["A", "B", "C", "D", "E", "F", "G",
                     "H", "I", "J", "K", "L", "M", "N",
                     "O", "P", "Q", "R", "S", "T", "U",
@@ -327,8 +323,8 @@ def setHotkey(keyType):
                     "F1", "F2", "F3", "F4", "F5",
                     "F6", "F7", "F8", "F9", "F10",
                     "F11", "F12"]:
-            mainFunctions.activeHotkeys[key] = lambda k=key: onKeyPressShared(k)
-        mainFunctions.startGlobalListener()
+            activeHotkeys[key] = lambda k=key: onKeyPressShared(k)
+        startGlobalListener()
 
 def refreshOutputDevices():
     logger.debug("refreshOutputDevices")

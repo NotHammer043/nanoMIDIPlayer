@@ -1,7 +1,5 @@
 import customtkinter as ctk
 import tkinter as tk
-import json
-import mido
 
 from modules import configuration
 from ui import customTheme

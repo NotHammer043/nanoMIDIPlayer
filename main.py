@@ -5,8 +5,8 @@ import datetime
 import logging
 import sys
 import signal
-from PIL import Image
 
+from PIL import Image
 from ui.midiPlayer import MidiPlayerTab
 from ui.drumsMacro import DrumsMacroTab
 from ui.midiHub import MidiHubTab
@@ -21,6 +21,10 @@ from modules import configuration
 
 appVersion = "v11.67.69"
 osName = platform.system()
+
+if osName == "Darwin":
+    mainFunctions.startGlobalListener()
+
 documentsDir = os.path.join(os.path.expanduser("~"), "Documents")
 
 # LOGS
