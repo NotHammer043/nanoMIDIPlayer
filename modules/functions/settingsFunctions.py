@@ -37,6 +37,20 @@ def switchTopMost():
     except Exception as e:
         logger.exception("Error in switchTopMost")
 
+def switchTopMost():
+    from modules.functions import mainFunctions
+    app = mainFunctions.getApp()
+    try:
+        state = switchTopMostvar.get() == "on"
+        app.wm_attributes("-topmost", state)
+
+        configuration.configData['appUI']['topmost'] = state
+        with open(configuration.configPath, 'w') as configFile:
+            json.dump(configuration.configData, configFile, indent=2)
+        logger.info("TopMost switched to %s", state)
+    except Exception as e:
+        logger.exception("Error in switchTopMost: %s", e)
+
 def switchConsole():
     try:
         configuration.configData['appUI']['console'] = switchConsolevar.get() == "on"

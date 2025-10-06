@@ -208,6 +208,9 @@ class App(ctk.CTk):
         # -- SIDEBAR END --
 
         # FINALIZATION
+        if configuration.configData['appUI']['topmost'] == True:
+            self.wm_attributes("-topmost", True)
+
         midiPlayerFunctions.loadSavedFile()
         drumsMacroFunctions.loadSavedFile()
 

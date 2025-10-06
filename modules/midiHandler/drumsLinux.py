@@ -186,8 +186,11 @@ def clockThread(totalSeconds, updateCallback=None):
         if not paused:
             shown = currentSeconds % max(1, int(totalSeconds))
             formattedTime = f"{formatTime(shown)} / {formatTime(totalSeconds)}"
-            if updateCallback:
-                updateCallback(formattedTime)
+            if configuration.configData['appUI']['timestamp']:
+                if updateCallback:
+                    updateCallback(formattedTime)
+                else:
+                    log(formattedTime)
             currentSeconds += 1
             for _ in range(10):
                 if stopEvent.is_set() or closeThread:

@@ -208,19 +208,6 @@ class MidiPlayerTab(ctk.CTkFrame):
         ToolTip.CreateToolTip(self.slowHotkeyButton, text = 'Slow-down Playback Hotkey')
         
         # TOGGLES
-        """
-        self.consoleToggle = ctk.CTkSwitch(
-            self.midiFrame, text="Console", command=None, variable=None, font=customTheme.globalFont14, 
-            onvalue="on", offvalue="off", fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SwitchDisabled"], 
-            progress_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SwitchEnabled"], 
-            button_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SwitchCircle"], 
-            button_hover_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SwitchCircleHovered"], 
-            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
-            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
-        )
-        self.consoleToggle.grid(row=4, column=0, padx=(184, 0), pady=(10, 10), sticky="nw")
-        """
-        
         self.sustainToggle = ctk.CTkSwitch(
             self.midiFrame, text="Sustain   ", command=midiPlayerFunctions.switchSustain, variable=midiPlayerFunctions.switchSustainvar, font=customTheme.globalFont14, 
             onvalue="on", offvalue="off", fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SwitchDisabled"], 
