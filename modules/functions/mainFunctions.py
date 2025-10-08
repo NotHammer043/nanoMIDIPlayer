@@ -35,9 +35,57 @@ listener = None
 activeHotkeys = {}
 ignoreKeyPress = False
 specialKeyMap = {
-    "SPACE": " ",
+    "SPACE": "SPACE",
     "ESC": "ESC",
-    "RETURN": "ENTER"
+    "ESCAPE": "ESC",
+    "ENTER": "ENTER",
+    "RETURN": "ENTER",
+    "TAB": "TAB",
+    "BACKSPACE": "BACKSPACE",
+    "DELETE": "DELETE",
+    "INSERT": "INSERT",
+    "HOME": "HOME",
+    "END": "END",
+    "PAGE_UP": "PAGE_UP",
+    "PAGE_DOWN": "PAGE_DOWN",
+
+    "LEFT": "LEFT",
+    "RIGHT": "RIGHT",
+    "UP": "UP",
+    "DOWN": "DOWN",
+
+    "SHIFT_L": "LEFT SHIFT",
+    "SHIFT_R": "RIGHT SHIFT",
+    "SHIFT": "LEFT SHIFT",
+    "CTRL_L": "LEFT CTRL",
+    "CTRL_R": "RIGHT CTRL",
+    "CONTROL": "LEFT CTRL",
+    "ALT_L": "LEFT ALT",
+    "ALT_R": "RIGHT ALT",
+    "ALT": "LEFT ALT",
+    "CMD": "CMD",
+    "CMD_R": "CMD",
+
+    "F1": "F1", "F2": "F2", "F3": "F3", "F4": "F4", "F5": "F5",
+    "F6": "F6", "F7": "F7", "F8": "F8", "F9": "F9", "F10": "F10",
+    "F11": "F11", "F12": "F12", "F13": "F13", "F14": "F14", "F15": "F15",
+
+    "NUMPAD0": "NUMPAD0", "NUMPAD1": "NUMPAD1", "NUMPAD2": "NUMPAD2",
+    "NUMPAD3": "NUMPAD3", "NUMPAD4": "NUMPAD4", "NUMPAD5": "NUMPAD5",
+    "NUMPAD6": "NUMPAD6", "NUMPAD7": "NUMPAD7", "NUMPAD8": "NUMPAD8",
+    "NUMPAD9": "NUMPAD9",
+    "ADD": "NUMPAD+",
+    "SUBTRACT": "NUMPAD-",
+    "MULTIPLY": "NUMPAD*",
+    "DIVIDE": "NUMPAD/",
+    "DECIMAL": "NUMPAD.",
+
+    "CAPS_LOCK": "CAPSLOCK",
+    "CAPSLOCK": "CAPSLOCK",
+    "NUM_LOCK": "NUMLOCK",
+    "NUMLOCK": "NUMLOCK",
+    "SCROLL_LOCK": "SCROLLLOCK",
+    "SCROLLLOCK": "SCROLLLOCK"
 }
 
 def startGlobalListener():
@@ -47,15 +95,27 @@ def startGlobalListener():
             if ignoreKeyPress:
                 return
             try:
+                keyStr = None
                 if hasattr(key, "char") and key.char:
                     keyStr = key.char.upper()
+
                 else:
-                    keyStr = str(key).replace("Key.", "").upper()
-                    keyStr = specialKeyMap.get(keyStr, keyStr)
+                    rawName = str(key).replace("Key.", "").replace(" ", "_").upper()
+                    if rawName in ("CTRL", "CONTROL"):
+                        rawName = "CTRL_L"
+                    elif rawName == "SHIFT":
+                        rawName = "SHIFT_L"
+                    elif rawName == "ALT":
+                        rawName = "ALT_L"
+
+                    keyStr = specialKeyMap.get(rawName, rawName)
+
                 if keyStr in activeHotkeys:
                     activeHotkeys[keyStr]()
+
             except Exception as e:
                 logger.debug(f"onPress error: {e}")
+
         listener = pynputKeyboard.Listener(on_press=onPress)
         listener.daemon = True
         listener.start()
@@ -315,14 +375,30 @@ def setHotkey(keyType):
         hotkeyHook = keyboard.on_press(onKeyPressWindows)
     else:
         activeHotkeys.clear()
-        for key in ["A", "B", "C", "D", "E", "F", "G",
-                    "H", "I", "J", "K", "L", "M", "N",
-                    "O", "P", "Q", "R", "S", "T", "U",
-                    "V", "W", "X", "Y", "Z",
-                    "SPACE", "ESC", "RETURN",
-                    "F1", "F2", "F3", "F4", "F5",
-                    "F6", "F7", "F8", "F9", "F10",
-                    "F11", "F12"]:
+        supportedKeys = [
+            "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", "F15",
+            "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+
+            "-", "=", "BACKSPACE", "`", "TAB", "[", "]", "ENTER", ";", "'", "\\", ",", ".", "/", 
+            "LEFT SHIFT", "RIGHT SHIFT", "LEFT CTRL", "RIGHT CTRL", "CMD", 
+            "LEFT ALT", "RIGHT ALT", "INSERT", "HOME", "PAGE_UP", "DELETE", "END", "PAGE_DOWN",
+
+            "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P",
+            "A", "S", "D", "F", "G", "H", "J", "K", "L",
+            "Z", "X", "C", "V", "B", "N", "M",
+
+            "NUMPAD1", "NUMPAD2", "NUMPAD3", "NUMPAD4", "NUMPAD5", 
+            "NUMPAD6", "NUMPAD7", "NUMPAD8", "NUMPAD9",
+            "NUMPAD*", "NUMPAD/", "NUMPAD.", "NUMPAD+", "NUMPAD-",
+
+            "LEFT", "DOWN", "UP", "RIGHT",
+
+            "CAPSLOCK",
+            "NUMLOCK",
+            "SCROLLLOCK",
+        ]
+
+        for key in supportedKeys:
             activeHotkeys[key] = lambda k=key: onKeyPressShared(k)
         startGlobalListener()
 
