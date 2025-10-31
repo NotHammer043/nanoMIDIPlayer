@@ -1,5 +1,5 @@
 {
-  "defaultTheme": "Dark",
+  "defaultTheme": "Halloween",
   "availableThemes": {
     "Red Velvet": "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/assets/themes/redvelvet.json",
     "Dark": "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/assets/themes/dark.json",
