@@ -122,20 +122,37 @@ jobs:
       - name: Build Windows exe
         run: ./scripts/build-win.bat
 
-      - name: Upload Windows exe
+      - name: Build Windows Bootstrapper
+        run: ./scripts/build-bootstrapper-win.bat
+
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: windows-exe
-          path: dist/*.exe
+          name: windows-build
+          path: |
+            dist/*.exe
 
   summary:
     needs: [build-macos-intel, build-macos-arm, build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate MD5 checksums
+        run: |
+          cd artifacts
+          echo "| MD5 | FILE |" >> summary.md
+          echo "|---|---|" >> summary.md
+
+          for file in $(find . -type f); do
+            md5=$(md5sum "$file" | cut -d ' ' -f1)
+            filename=$(basename "$file")
+            echo "| $md5 | [$filename](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> summary.md
+          done
+
       - name: Display build summary
         run: |
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- macOS Intel DMG: [macOS-Intel](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          echo "- macOS ARM DMG: [macOS-ARM](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          echo "- Linux Build: [linux-build](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          echo "- Windows EXE: [windows-exe](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          cat artifacts/summary.md >> $GITHUB_STEP_SUMMARY
