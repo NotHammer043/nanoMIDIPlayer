@@ -1,0 +1,7 @@
+/base/
+/venv-win/
+/venv-mac/
+/venv-lnx/
+__pycache__/
+/*.mid
+*.mid

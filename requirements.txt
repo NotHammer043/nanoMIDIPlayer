@@ -1,8 +1,12 @@
 customtkinter
-Pillow
 mido
+keyboard
 pynput
+pillow
 requests
 python-rtmidi
+markdown
+tkinterweb[svg]
+pygments
 pyinstaller
-keyboard
+emoji

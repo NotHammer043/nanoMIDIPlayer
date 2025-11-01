@@ -1,0 +1,158 @@
+name: Build Cross-Platform Artifacts
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos-intel:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          brew install create-dmg tcl-tk
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip setuptools wheel
+          pip install pyinstaller customtkinter
+          pip install -r requirements.txt
+
+      - name: Build macOS Intel DMG
+        run: |
+          chmod +x ./scripts/build-mac.sh
+          ./scripts/build-mac.sh --arch intel
+
+      - name: Upload macOS Intel DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-Intel
+          path: dist/nanoMIDIPlayer-Intel.dmg
+
+  build-macos-arm:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          brew install create-dmg tcl-tk
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip setuptools wheel
+          pip install pyinstaller customtkinter
+          pip install -r requirements.txt
+
+      - name: Build macOS ARM DMG
+        run: |
+          chmod +x ./scripts/build-mac.sh
+          ./scripts/build-mac.sh --arch arm
+
+      - name: Upload macOS ARM DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-ARM
+          path: dist/nanoMIDIPlayer-ARM.dmg
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-venv python3-tk python3-pip build-essential
+          python3 -m pip install --upgrade pip setuptools wheel pyinstaller
+          python3 -m pip install -r requirements.txt
+
+      - name: Build Linux binary
+        run: |
+          chmod +x ./scripts/build-lnx.sh
+          ./scripts/build-lnx.sh
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: |
+            dist/nanoMIDIPlayer
+            dist/nanoMIDIPlayer.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel pyinstaller
+          python -m pip install -r requirements.txt
+
+      - name: Build Windows exe
+        run: ./scripts/build-win.bat
+
+      - name: Upload Windows exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: dist/*.exe
+          
+  build-bootstrapper-win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build Windows Bootstrapper
+        run: ./scripts/build-bootstrapper-win.bat
+
+      - name: Copy and push bootstrapper
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path api
+          Copy-Item "dist\bootstrapper.exe" "api\bootstrapper.exe" -Force
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add api/bootstrapper.exe
+          git commit -m "Update bootstrapper.exe from CI build" || echo "No changes to commit"
+          git push origin main
+        
+  summary:
+    needs: [build-macos-intel, build-macos-arm, build-linux, build-windows, build-bootstrapper-win]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate Build Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| MD5 | FILE |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+
+          find artifacts -type f | while read file; do
+            MD5=$(md5sum "$file" | cut -d ' ' -f1)
+            FILENAME=$(basename "$file")
+            echo "| $MD5 | [$FILENAME](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) |" >> $GITHUB_STEP_SUMMARY
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Job summary generated at run-time_" >> $GITHUB_STEP_SUMMARY
