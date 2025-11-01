@@ -8,7 +8,7 @@ import tkinter.messagebox as messagebox
 
 def checkForUpdates(appVersion):
     try:
-        response = requests.get("https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/version")
+        response = requests.get("https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/version.json")
         response.raise_for_status()
         versionInfo = response.json()
 
