@@ -28,7 +28,7 @@ with open(configPath, "r") as config:
 
 def checkConfig():
     global configData
-    url = "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/beta/api/defaultConfig.json"
+    url = "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/defaultConfig.json"
     remoteConfig = None
 
     try:

@@ -1,5 +1,5 @@
 {
-  "latest": ["B-10.4.20", "10.4.20"],
+  "latest": ["11.67.69"],
   "avoid": ["0.00"],
   "alertMessage": "This version is being bla bla bla because of a very skibidi sigma update. Please update immediately!"
 }

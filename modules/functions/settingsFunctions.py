@@ -17,6 +17,7 @@ switchTopMostvar = customtkinter.StringVar(value="off")
 switchConsolevar = customtkinter.StringVar(value="off")
 switchToolTipvar = customtkinter.StringVar(value="off")
 switchTimestampvar = customtkinter.StringVar(value="off")
+switchCheckForUpdatesvar = customtkinter.StringVar(value="off")
 switchForceThemevar = customtkinter.StringVar(value="off")
 
 try:
@@ -24,6 +25,7 @@ try:
     switchConsolevar.set("on" if configuration.configData.get('appUI', {}).get('console', False) else "off")
     switchToolTipvar.set("on" if configuration.configData.get('appUI', {}).get('tooltip', False) else "off")
     switchTimestampvar.set("on" if configuration.configData.get('appUI', {}).get('timestamp', False) else "off")
+    switchCheckForUpdatesvar.set("on" if configuration.configData.get('appUI', {}).get('checkForUpdates', False) else "off")
     switchForceThemevar.set("on" if configuration.configData.get('appUI', {}).get('forceTheme', False) else "off")
 except Exception as e:
     logger.exception("Error setting initial switch states")
@@ -77,6 +79,15 @@ def switchTimestamp():
         logger.info("Timestamp switched to %s", switchTimestampvar.get())
     except Exception as e:
         logger.exception("Error in switchTimestamp")
+
+def switchCheckForUpdates():
+    try:
+        configuration.configData['appUI']['checkForUpdates'] = switchCheckForUpdatesvar.get() == "on"
+        with open(configuration.configPath, 'w') as configFile:
+            json.dump(configuration.configData, configFile, indent=2)
+        logger.info("Check For Updates switched to %s", switchCheckForUpdatesvar.get())
+    except Exception as e:
+        logger.exception("Error in switchCheckForUpdates")
 
 def switchForceTheme():
     try:

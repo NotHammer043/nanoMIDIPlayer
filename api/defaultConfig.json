@@ -349,6 +349,7 @@
     "console": true,
     "forceTheme": true,
     "tooltip": true,
-    "timestamp": true
+    "timestamp": true,
+    "checkForUpdates": true
   }
 }

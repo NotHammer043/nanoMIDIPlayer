@@ -1,8 +1,6 @@
 import customtkinter as ctk
 import platform
 import os
-import json
-import requests
 
 from ui import customTheme
 from ui.widget.tooltip import ToolTip
@@ -676,6 +674,19 @@ class SettingsTab(ctk.CTkFrame):
         )
         self.timestampToggle.grid(row=13, column=0, padx=(20, 0), pady=(75, 0), sticky="nw")
         ToolTip.CreateToolTip(self.timestampToggle, text = 'Toggles the updates of the timestamp text')
+
+        self.checkForUpdatesToggle = ctk.CTkSwitch(
+            self.mainScrollFrame, text="Check For Updates", command=settingsFunctions.switchCheckForUpdates, variable=settingsFunctions.switchCheckForUpdatesvar, 
+            font=customTheme.globalFont14, onvalue="on", offvalue="off", 
+            fg_color=customTheme.activeThemeData["Theme"]["Settings"]["SwitchDisabled"], 
+            progress_color=customTheme.activeThemeData["Theme"]["Settings"]["SwitchEnabled"], 
+            button_color=customTheme.activeThemeData["Theme"]["Settings"]["SwitchCircle"], 
+            button_hover_color=customTheme.activeThemeData["Theme"]["Settings"]["SwitchCircleHovered"], 
+            text_color=customTheme.activeThemeData["Theme"]["Settings"]["TextColor"], 
+            text_color_disabled=customTheme.activeThemeData["Theme"]["Settings"]["TextColorDisabled"]
+        )
+        self.checkForUpdatesToggle.grid(row=13, column=0, padx=(20, 0), pady=(100, 0), sticky="nw")
+        ToolTip.CreateToolTip(self.timestampToggle, text = 'Toggles the check for new versions')
 
         # DEBUG
         self.openConsoleButton = ctk.CTkButton(

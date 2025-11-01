@@ -42,7 +42,7 @@ class InfoTab(ctk.CTkFrame):
         try:
             logger.info("Attempting to fetch INFO.md from GitHub")
             with urllib.request.urlopen(
-                "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/beta/api/INFO.md",
+                "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/INFO.md",
                 timeout=5
             ) as response:
                 mdContent = response.read().decode("utf-8")

@@ -328,6 +328,9 @@ def changeSpeed(amount):
 
 def stopPlayback():
     global closeThread, stopEvent, playThread, clockThreadRef, keyboardHandlers, timerList
+    if closeThread or stopEvent.is_set():
+        return
+    
     stopEvent.set()
     closeThread = True
     for key in list(heldKeys):
