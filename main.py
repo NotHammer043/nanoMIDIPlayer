@@ -57,12 +57,15 @@ def initLogging():
     )
 
     fileHandler = FlushFileHandler(logFile, encoding="utf-8")
-    streamHandler = logging.StreamHandler(sys.stdout)
+
+    handlers = [fileHandler]
+    if sys.stdout:
+        handlers.append(logging.StreamHandler(sys.stdout))
 
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        handlers=[fileHandler, streamHandler],
+        handlers=handlers,
         force=True
     )
 
