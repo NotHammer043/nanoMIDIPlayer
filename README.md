@@ -5,6 +5,8 @@
 ![GitHub stars](https://img.shields.io/github/stars/NotHammer043/nanoMIDIPlayer?style=for-the-badge)
 ![GitHub license](https://img.shields.io/github/license/NotHammer043/nanoMIDIPlayer?style=for-the-badge)
 [![Download nanoMIDIPlayer](https://img.shields.io/github/downloads/NotHammer043/nanoMIDIPlayer/total?style=for-the-badge)](https://github.com/NotHammer043/nanoMIDIPlayer/releases)  
+
+[![Discord](https://us-east-1.tixte.net/uploads/nitrogift.discowd.com/mfmrte8il51.png)](https://nanomidi.net/discord)  [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/nanoMIDI) [![PayPal](https://us-east-1.tixte.net/uploads/nitrogift.discowd.com/paypalbutton.png)](https://paypal.me/nanoMIDI)  
 ---
 
 ## 🚀 Features  
