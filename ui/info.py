@@ -131,8 +131,14 @@ class InfoTab(ctk.CTkFrame):
                             .donator-table th {{
                                 color: #00ff00;
                             }}
+                            .beta-table {{
+                                transform-origin: top center;
+                                margin: 0 auto;
+                            }}
                             .beta-table th, .beta-table td {{
                                 border: 1px solid #a020f0;
+                                font-size: 0.7em;
+                                padding: 3px;
                             }}
                             .beta-table th {{
                                 color: #a020f0;
@@ -144,6 +150,7 @@ class InfoTab(ctk.CTkFrame):
                     </body>
                 </html>
                 """
+
                 self.htmlFrame.load_html(htmlTemplate)
                 logger.info("HTML content loaded into HtmlFrame")
             except Exception as e:

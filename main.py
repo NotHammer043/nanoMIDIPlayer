@@ -5,6 +5,8 @@ import datetime
 import logging
 import sys
 import signal
+import threading
+import argparse
 
 from PIL import Image
 from ui.midiPlayer import MidiPlayerTab
@@ -18,6 +20,7 @@ from ui import customTheme
 from ui.widget.loadingScreen import LoadingScreen
 from modules.functions import mainFunctions
 from modules import configuration
+from modules import updater
 
 appVersion = "v11.67.69"
 osName = platform.system()
@@ -54,12 +57,15 @@ def initLogging():
     )
 
     fileHandler = FlushFileHandler(logFile, encoding="utf-8")
-    streamHandler = logging.StreamHandler(sys.stdout)
+
+    handlers = [fileHandler]
+    if sys.stdout:
+        handlers.append(logging.StreamHandler(sys.stdout))
 
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        handlers=[fileHandler, streamHandler],
+        handlers=handlers,
         force=True
     )
 
@@ -107,6 +113,14 @@ class App(ctk.CTk):
         from modules.functions import midiPlayerFunctions
         from modules.functions import drumsMacroFunctions
         from modules.functions import settingsFunctions
+
+        parser = argparse.ArgumentParser(description='nanoMIDIPlayer')
+        parser.add_argument('--debug', action='store_true', help='debug console')
+        args = parser.parse_args()
+
+        if args.debug:
+            settingsFunctions.openConsole()
+            print("console opened.")
 
         self.frames = {
             "midi": MidiPlayerTab(self.contentFrame),
@@ -222,6 +236,9 @@ class App(ctk.CTk):
         
         midiPlayerFunctions.useMIDIStatus()
         midiPlayerFunctions.switchUseMIDIvar.set("on" if configuration.configData.get('midiPlayer', {}).get('useMIDIOutput', False) else "off")
+
+        if osName == "Windows" and configuration.configData["appUI"]["checkForUpdates"]:
+            threading.Thread(target=updater.runUpdater, args=(appVersion,)).start()
 
         if osName == "Darwin":
             mainFunctions.log("WARNING: The macOS MIDI Player may run inefficiently due to system restrictions. Please report any issues or bugs to the developer.")

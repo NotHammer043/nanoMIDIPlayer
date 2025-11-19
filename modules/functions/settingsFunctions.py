@@ -584,13 +584,23 @@ def updateFromEntry(name, event=None):
 
 def openConsole(event=None):
     try:
+        import ctypes
         ctypes.windll.kernel32.AllocConsole()
         sys.stdout = open('CONOUT$', 'w')
         sys.stderr = open('CONOUT$', 'w')
         sys.stdin = open('CONIN$', 'r')
         print("created output.")
-        logger.info("Console opened")
-    except Exception as e:
+
+        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(formatter)
+
+        logger = logging.getLogger()
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
+
+        logger.info("Console opened and all loggers linked.")
+    except Exception:
         logger.exception("Error opening console")
 
 def closeConsole(event=None):
