@@ -124,22 +124,31 @@ def pressAndMaybeRelease(key):
         t.start()
 
 def simulateKey(msgType, note, velocity):
-    if not -15 <= note - 36 <= 88:
-        log(f"out of range: {note}")
-        return
-    key = None
+    allow88 = configuration.configData["midiPlayer"]["88Keys"]
+
     letterNoteMap = configuration.configData["midiPlayer"]["pianoMap"]["61keyMap"]
     lowNotes = configuration.configData["midiPlayer"]["pianoMap"]["88keyMap"]["lowNotes"]
     highNotes = configuration.configData["midiPlayer"]["pianoMap"]["88keyMap"]["highNotes"]
+
+    if not allow88:
+        if str(note) not in letterNoteMap:
+            log(f"out of range: {note}")
+            return
+    else:
+        if str(note) not in letterNoteMap and str(note) not in lowNotes and str(note) not in highNotes:
+            log(f"out of range: {note}")
+            return
+
     if str(note) in letterNoteMap:
         key = letterNoteMap[str(note)]
-    elif str(note) in lowNotes:
+    elif allow88 and str(note) in lowNotes:
         key = lowNotes[str(note)]
-    elif str(note) in highNotes:
+    elif allow88 and str(note) in highNotes:
         key = highNotes[str(note)]
-    if not key:
-        log(f"no mapping: {note}")
+    else:
+        log(f"out of range: {note}")
         return
+
     if msgType == "note_on":
         if configuration.configData["midiPlayer"]["velocity"]:
             velocityKey = findVelocityKey(velocity)
@@ -147,6 +156,7 @@ def simulateKey(msgType, note, velocity):
             press(velocityKey)
             release(velocityKey)
             release("alt")
+
         if 36 <= note <= 96:
             if configuration.configData["midiPlayer"]["noDoubles"]:
                 if re.search("[!@$%^*(]", key):
@@ -168,6 +178,7 @@ def simulateKey(msgType, note, velocity):
             press("ctrl")
             pressAndMaybeRelease(key.lower())
             release("ctrl")
+
     elif msgType == "note_off":
         if 36 <= note <= 96:
             if re.search("[!@$%^*(]", key):
@@ -197,7 +208,7 @@ def parseMidi(message):
 
 def playMidiOnce(midiFile):
     global sustainActive
-    mid = mido.MidiFile(midiFile)
+    mid = mido.MidiFile(midiFile, clip=True)
     startTime = time.monotonic()
     currentTime = 0
     for msg in mid:
@@ -298,7 +309,7 @@ def startPlayback(midiFile, updateCallback=None):
     paused = False
     if playThread is not None and isinstance(playThread, threading.Thread) and playThread.is_alive():
         return
-    totalSeconds = mido.MidiFile(midiFile).length
+    totalSeconds = mido.MidiFile(midiFile, clip=True).length
     playThread = threading.Thread(target=playMidiFile, args=(midiFile,), daemon=True)
     clockThreadRef = threading.Thread(target=clockThread, args=(totalSeconds, updateCallback), daemon=True)
     clockThreadRef.start()

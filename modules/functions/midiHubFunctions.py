@@ -252,7 +252,7 @@ def downloadMidi(url):
         MidiPlayerTab.filePathEntry.set(filepath)
         
         app.showFrame("midi")
-        midiFile = MidiFile(filepath)
+        midiFile = MidiFile(filepath, clip=True)
         totalTime = midiFile.length
         timelineText = (
             f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}"

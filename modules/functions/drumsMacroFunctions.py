@@ -47,7 +47,7 @@ def selectFile():
                 DrumsMacroTab.midiPathDropdown.configure(values=currentVAL)
 
             DrumsMacroTab.midiPathDropdown.set(filePath)
-            midiFile = MidiFile(filePath)
+            midiFile = MidiFile(filePath, clip=True)
 
             timeLength = midiFile.length
             timelineText = (
@@ -97,7 +97,7 @@ def loadSavedFile():
                 entryValues.append(currentFile)
                 DrumsMacroTab.midiPathDropdown.configure(values=entryValues)
             DrumsMacroTab.midiPathDropdown.set(currentFile)
-            midiFileData = MidiFile(currentFile)
+            midiFileData = MidiFile(currentFile, clip=True)
             totalTime = midiFileData.length
             timelineText = f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}" if configuration.configData['appUI']['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(totalTime)))}"
             DrumsMacroTab.timelineIndicator.configure(text=timelineText)
@@ -110,7 +110,7 @@ def loadSavedFile():
             configuration.configData['drumsMacro']['currentFile'] = firstFile
             with open(configuration.configPath, 'w') as config_file:
                 json.dump(configuration.configData, config_file, indent=2)
-            midiFileData = MidiFile(firstFile)
+            midiFileData = MidiFile(firstFile, clip=True)
             totalTime = midiFileData.length
             timelineText = f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}" if configuration.configData['appUI']['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(totalTime)))}"
             DrumsMacroTab.timelineIndicator.configure(text=timelineText)
@@ -131,7 +131,7 @@ def switchMidiEvent(event=None):
         with open(configuration.configPath, 'w') as file:
             json.dump(configuration.configData, file, indent=2)
 
-        midiFileData = MidiFile(midiFile)
+        midiFileData = MidiFile(midiFile, clip=True)
         totalTime = midiFileData.length
         timelineText = f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}" if configuration.configData['appUI']['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(totalTime)))}"
         DrumsMacroTab.timelineIndicator.configure(text=timelineText)
@@ -288,7 +288,7 @@ def stopPlayback():
 
         midiFile = DrumsMacroTab.midiPathDropdown.get()
         if os.path.exists(midiFile):
-            midiFileData = MidiFile(midiFile)
+            midiFileData = MidiFile(midiFile, clip=True)
             totalTime = midiFileData.length
             timelineText = (
                 f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}"

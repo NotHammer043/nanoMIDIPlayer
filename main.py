@@ -21,8 +21,9 @@ from ui.widget.loadingScreen import LoadingScreen
 from modules.functions import mainFunctions
 from modules import configuration
 from modules import updater
+from modules import telemetry
 
-appVersion = "v11.67.69"
+appVersion = "v11.69.67"
 osName = platform.system()
 
 if osName == "Darwin":
@@ -233,8 +234,12 @@ class App(ctk.CTk):
 
         settingsFunctions.initControlSets()
         self.showFrame("midi")
+
+        if configuration.configData['appUI']['sendTelemetry'] == True:
+            telemetryThread = threading.Thread(target=telemetry.startPing)
+            telemetryThread.daemon = True
+            telemetryThread.start()
         
-        midiPlayerFunctions.useMIDIStatus()
         midiPlayerFunctions.switchUseMIDIvar.set("on" if configuration.configData.get('midiPlayer', {}).get('useMIDIOutput', False) else "off")
 
         if osName == "Windows" and configuration.configData["appUI"]["checkForUpdates"]:

@@ -49,8 +49,8 @@ def switchUseMIDI():
         with open(configuration.configPath, 'w') as config_file:
             json.dump(configuration.configData, config_file, indent=2)
 
-        useMIDIStatus()
         mainFunctions.clearConsole()
+        mainFunctions.refreshOutputDevices()
         if switchUseMIDIvar.get() == "on":
             threading.Thread(target=mainFunctions.insertConsoleText, args=("-------< WARNING >-------   This will not press keys for you!", True)).start()
         else:
@@ -94,32 +94,6 @@ def switch88Keys():
     except Exception as e:
         logger.exception(f"switch88Keys error: {e}")
 
-def useMIDIStatus():
-    logger.info("useMIDIStatus called")
-    try:
-        if configuration.configData["midiPlayer"]['useMIDIOutput']:
-            MidiPlayerTab.outputDeviceDropdown.configure(state="normal")
-            MidiPlayerTab.sustainToggle.configure(state="disabled")
-            MidiPlayerTab.noDoublesToggle.configure(state="disabled")
-            MidiPlayerTab.velocityToggle.configure(state="disabled")
-            MidiPlayerTab.use88KeysToggle.configure(state="disabled")
-            SettingsTab.sustainToggle.configure(state="disabled")
-            SettingsTab.noDoublesToggle.configure(state="disabled")
-            SettingsTab.velocityToggle.configure(state="disabled")
-            SettingsTab.use88KeysToggle.configure(state="disabled")
-        else:
-            MidiPlayerTab.outputDeviceDropdown.configure(state="disabled")
-            MidiPlayerTab.sustainToggle.configure(state="normal")
-            MidiPlayerTab.noDoublesToggle.configure(state="normal")
-            MidiPlayerTab.velocityToggle.configure(state="normal")
-            MidiPlayerTab.use88KeysToggle.configure(state="normal")
-            SettingsTab.sustainToggle.configure(state="normal")
-            SettingsTab.noDoublesToggle.configure(state="normal")
-            SettingsTab.velocityToggle.configure(state="normal")
-            SettingsTab.use88KeysToggle.configure(state="normal")
-    except Exception as e:
-        logger.exception(f"useMIDIStatus error: {e}")
-
 def selectFile():
     logger.info("selectFile called")
     try:
@@ -138,7 +112,7 @@ def selectFile():
                 MidiPlayerTab.filePathEntry.configure(values=currentVAL)
 
             MidiPlayerTab.filePathEntry.set(filePath)
-            midiFile = MidiFile(filePath)
+            midiFile = MidiFile(filePath, clip=True)
 
             time = midiFile.length
             timelineText = (
@@ -188,7 +162,7 @@ def loadSavedFile():
                 entryValues.append(currentFile)
                 MidiPlayerTab.filePathEntry.configure(values=entryValues)
             MidiPlayerTab.filePathEntry.set(currentFile)
-            midiFileData = MidiFile(currentFile)
+            midiFileData = MidiFile(currentFile, clip=True)
             totalTime = midiFileData.length
             timelineText = f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}" if configuration.configData['appUI']['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(totalTime)))}"
             MidiPlayerTab.timelineIndicator.configure(text=timelineText)
@@ -201,7 +175,7 @@ def loadSavedFile():
             configuration.configData['midiPlayer']['currentFile'] = firstFile
             with open(configuration.configPath, 'w') as config_file:
                 json.dump(configuration.configData, config_file, indent=2)
-            midiFileData = MidiFile(firstFile)
+            midiFileData = MidiFile(firstFile, clip=True)
             totalTime = midiFileData.length
             timelineText = f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}" if configuration.configData['appUI']['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(totalTime)))}"
             MidiPlayerTab.timelineIndicator.configure(text=timelineText)
@@ -222,7 +196,7 @@ def switchMidiEvent(event=None):
         with open(configuration.configPath, 'w') as file:
             json.dump(configuration.configData, file, indent=2)
 
-        midiFileData = MidiFile(midiFile)
+        midiFileData = MidiFile(midiFile, clip=True)
         totalTime = midiFileData.length
         timelineText = f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}" if configuration.configData['appUI']['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(totalTime)))}"
         MidiPlayerTab.timelineIndicator.configure(text=timelineText)
@@ -364,7 +338,7 @@ def stopPlayback():
 
         midiFile = MidiPlayerTab.filePathEntry.get()
         if os.path.exists(midiFile):
-            midiFileData = MidiFile(midiFile)
+            midiFileData = MidiFile(midiFile, clip=True)
             totalTime = midiFileData.length
             timelineText = (
                 f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}"

@@ -350,6 +350,7 @@
     "forceTheme": true,
     "tooltip": true,
     "timestamp": true,
-    "checkForUpdates": true
+    "checkForUpdates": true,
+    "sendTelemetry": true
   }
 }

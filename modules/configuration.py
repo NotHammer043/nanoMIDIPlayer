@@ -1,9 +1,11 @@
 import os
 import json
-import platform
+import logging
 import shutil
 import requests
 import sys
+
+logger = logging.getLogger(__name__)
 
 documentsDir = os.path.join(os.path.expanduser("~"), "Documents")
 baseDirectory = os.path.join(documentsDir, "nanoMIDIPlayer")
@@ -18,46 +20,190 @@ def resourcePath(relativePath):
     else:
         basePath = os.path.abspath(".")
     return os.path.join(basePath, relativePath)
+
 defaultConfigPath = resourcePath("assets/defaultConfig.json")
 
-if not os.path.exists(configPath):
-    shutil.copy(defaultConfigPath, configPath)
+def validateJsonFile(filepath):
+    try:
+        with open(filepath, 'r') as f:
+            content = f.read().strip()
+            if not content:
+                return False, "File is empty"
+            json.loads(content)
+            return True, None
+    except json.JSONDecodeError as e:
+        return False, f"Invalid JSON: {str(e)}"
+    except Exception as e:
+        return False, f"File error: {str(e)}"
 
-with open(configPath, "r") as config:
-    configData = json.load(config)
+def createFallbackConfig():
+    try:
+        fallbackConfig = {}
+        
+        if os.path.exists(defaultConfigPath):
+            isValid, error = validateJsonFile(defaultConfigPath)
+            if isValid:
+                with open(defaultConfigPath, "r") as f:
+                    fallbackConfig = json.load(f)
+                logger.info("Loaded fallback from defaultConfig.json")
+            else:
+                logger.error(f"defaultConfig.json invalid: {error}")
+        else:
+            logger.error("defaultConfig.json not found")
+            
+            fallbackConfig = {
+                "version": 1,
+                "midiSettings": {
+                    "instrument": "acoustic_grand_piano"
+                }
+            }
+        
+        with open(configPath, "w") as file:
+            json.dump(fallbackConfig, file, indent=2)
+        logger.info("Created fallback config")
+        return fallbackConfig
+        
+    except Exception as e:
+        logger.error(f"Failed to create fallback: {str(e)}")
+        
+        minimalConfig = {"version": 1}
+        with open(configPath, "w") as file:
+            json.dump(minimalConfig, file, indent=2)
+        return minimalConfig
+
+def deepMerge(target, source):
+    for key, value in source.items():
+        if key in target:
+            if isinstance(target[key], dict) and isinstance(value, dict):
+                deepMerge(target[key], value)
+            elif isinstance(target[key], list) and isinstance(value, list):
+                target[key] = value
+            else:
+                target[key] = value
+        else:
+            target[key] = value
+    return target
 
 def checkConfig():
     global configData
+    
+    configValid = False
+    configData = {}
+    
+    if os.path.exists(configPath):
+        isValid, error = validateJsonFile(configPath)
+        if isValid:
+            try:
+                with open(configPath, "r") as config:
+                    configData = json.load(config)
+                if isinstance(configData, dict):
+                    configValid = True
+                    logger.info("Loaded existing config")
+                else:
+                    logger.error("Config is not a dictionary")
+            except Exception as e:
+                logger.error(f"Error loading config: {str(e)}")
+        else:
+            logger.warning(f"Config validation failed: {error}")
+    
+    if not configValid:
+        logger.warning("Using fallback config")
+        configData = createFallbackConfig()
+        return
+    
+    remoteConfigs = []
+    
     url = "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/defaultConfig.json"
-    remoteConfig = None
-
+    
     try:
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, timeout=10)
         if response.status_code == 200:
-            remoteConfig = response.json()
+            try:
+                apiConfig = response.json()
+                remoteConfigs.append(("api", apiConfig))
+                logger.info("Successfully fetched remote config")
+            except json.JSONDecodeError as e:
+                logger.error(f"Invalid JSON in remote config: {str(e)}")
         else:
-            print(f"Failed to retrieve remote configuration. Code: {response.status_code}")
+            logger.warning(f"Failed to retrieve remote configuration. Code: {response.status_code}")
+    except requests.exceptions.Timeout:
+        logger.warning("Remote config fetch timeout")
+    except requests.exceptions.ConnectionError:
+        logger.warning("No internet connection for config update")
     except Exception as e:
-        print(f"Error fetching remote configuration: {e}")
-
-    if remoteConfig is None:
-        if os.path.exists(defaultConfigPath):
-            with open(defaultConfigPath, "r") as f:
-                remoteConfig = json.load(f)
-            print("Loaded defaultConfig.json as fallback")
+        logger.error(f"Error fetching remote configuration: {str(e)}")
+    
+    if os.path.exists(defaultConfigPath):
+        isValid, error = validateJsonFile(defaultConfigPath)
+        if isValid:
+            try:
+                with open(defaultConfigPath, "r") as f:
+                    localDefaultConfig = json.load(f)
+                remoteConfigs.append(("local_default", localDefaultConfig))
+                logger.info("Loaded defaultConfig.json")
+            except Exception as e:
+                logger.error(f"Error loading defaultConfig.json: {str(e)}")
         else:
-            print("No remote config and no defaultConfig.json found")
-            remoteConfig = {}
-
-    updated = False
-    for key, value in remoteConfig.items():
-        if key not in configData:
-            configData[key] = value
-            updated = True
-
-    if updated:
-        with open(configPath, "w") as file:
-            json.dump(configData, file, indent=2)
-        print("Updated Config")
-    else:
-        print("Config Up to Date")
+            logger.error(f"defaultConfig.json invalid: {error}")
+    
+    if not remoteConfigs:
+        logger.warning("No valid config sources available")
+        return
+    
+    try:
+        updated = False
+        addedKeys = []
+        
+        allKeys = set()
+        for sourceName, sourceConfig in remoteConfigs:
+            if isinstance(sourceConfig, dict):
+                for key in sourceConfig.keys():
+                    allKeys.add(key)
+        
+        for key in allKeys:
+            if key not in configData:
+                for sourceName, sourceConfig in remoteConfigs:
+                    if key in sourceConfig and isinstance(sourceConfig, dict):
+                        configData[key] = sourceConfig[key]
+                        updated = True
+                        addedKeys.append((key, sourceName))
+                        logger.info(f"Added key '{key}' from {sourceName}")
+                        break
+        
+        for sourceName, sourceConfig in remoteConfigs:
+            if isinstance(sourceConfig, dict):
+                deepMerge(configData, sourceConfig)
+                updated = True
+        
+        if updated:
+            backupPath = configPath + ".backup"
+            try:
+                shutil.copy2(configPath, backupPath)
+                logger.info(f"Created config backup: {backupPath}")
+            except Exception as e:
+                logger.error(f"Failed to create backup: {str(e)}")
+            
+            try:
+                with open(configPath, "w") as file:
+                    json.dump(configData, file, indent=2)
+                logger.info(f"Updated Config with keys from all sources")
+                if addedKeys:
+                    logger.info(f"Added new keys: {addedKeys}")
+            except Exception as e:
+                logger.error(f"Failed to write updated config: {str(e)}")
+                
+                try:
+                    shutil.copy2(backupPath, configPath)
+                    logger.info("Restored config from backup")
+                except:
+                    createFallbackConfig()
+        else:
+            logger.info("Config Up to Date")
+            
+    except Exception as e:
+        logger.error(f"Config update failed: {str(e)}")
+        
+        try:
+            configData = createFallbackConfig()
+        except Exception as e2:
+            logger.critical(f"Failed to create fallback: {str(e2)}")
