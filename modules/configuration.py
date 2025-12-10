@@ -71,19 +71,6 @@ def createFallbackConfig():
             json.dump(minimalConfig, file, indent=2)
         return minimalConfig
 
-def deepMerge(target, source):
-    for key, value in source.items():
-        if key in target:
-            if isinstance(target[key], dict) and isinstance(value, dict):
-                deepMerge(target[key], value)
-            elif isinstance(target[key], list) and isinstance(value, list):
-                target[key] = value
-            else:
-                target[key] = value
-        else:
-            target[key] = value
-    return target
-
 def checkConfig():
     global configData
     
@@ -160,50 +147,45 @@ def checkConfig():
                 for key in sourceConfig.keys():
                     allKeys.add(key)
         
+        backupMade = False
+        backupPath = configPath + ".backup"
+        
         for key in allKeys:
             if key not in configData:
                 for sourceName, sourceConfig in remoteConfigs:
                     if key in sourceConfig and isinstance(sourceConfig, dict):
+                        if not backupMade:
+                            try:
+                                shutil.copy2(configPath, backupPath)
+                                logger.info(f"Created config backup: {backupPath}")
+                                backupMade = True
+                            except Exception as e:
+                                logger.error(f"Failed to create backup: {str(e)}")
+                        
                         configData[key] = sourceConfig[key]
                         updated = True
                         addedKeys.append((key, sourceName))
-                        logger.info(f"Added key '{key}' from {sourceName}")
+                        logger.info(f"Added missing key '{key}' from {sourceName}")
                         break
         
-        for sourceName, sourceConfig in remoteConfigs:
-            if isinstance(sourceConfig, dict):
-                deepMerge(configData, sourceConfig)
-                updated = True
-        
         if updated:
-            backupPath = configPath + ".backup"
-            try:
-                shutil.copy2(configPath, backupPath)
-                logger.info(f"Created config backup: {backupPath}")
-            except Exception as e:
-                logger.error(f"Failed to create backup: {str(e)}")
-            
             try:
                 with open(configPath, "w") as file:
                     json.dump(configData, file, indent=2)
-                logger.info(f"Updated Config with keys from all sources")
+                logger.info(f"Updated Config with missing keys")
                 if addedKeys:
                     logger.info(f"Added new keys: {addedKeys}")
             except Exception as e:
                 logger.error(f"Failed to write updated config: {str(e)}")
                 
-                try:
-                    shutil.copy2(backupPath, configPath)
-                    logger.info("Restored config from backup")
-                except:
-                    createFallbackConfig()
+                if backupMade:
+                    try:
+                        shutil.copy2(backupPath, configPath)
+                        logger.info("Restored config from backup")
+                    except Exception as e2:
+                        logger.error(f"Failed to restore from backup: {e2}")
         else:
-            logger.info("Config Up to Date")
+            logger.info("Config Up to Date - No missing keys found")
             
     except Exception as e:
         logger.error(f"Config update failed: {str(e)}")
-        
-        try:
-            configData = createFallbackConfig()
-        except Exception as e2:
-            logger.critical(f"Failed to create fallback: {str(e2)}")

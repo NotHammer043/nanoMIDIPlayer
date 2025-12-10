@@ -128,7 +128,7 @@ def checkThemeUpdates():
     loadThemeFile()
     
     remoteThemeData = {}
-    url = "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/defaultTheme.json"
+    url = "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/assets/defaultTheme.json"
     
     try:
         response = requests.get(url, timeout=10)
