@@ -38,8 +38,6 @@ def validateJsonFile(filepath):
 
 def createFallbackConfig():
     try:
-        fallbackConfig = {}
-        
         if os.path.exists(defaultConfigPath):
             isValid, error = validateJsonFile(defaultConfigPath)
             if isValid:
@@ -48,15 +46,10 @@ def createFallbackConfig():
                 logger.info("Loaded fallback from defaultConfig.json")
             else:
                 logger.error(f"defaultConfig.json invalid: {error}")
+                fallbackConfig = {}
         else:
             logger.error("defaultConfig.json not found")
-            
-            fallbackConfig = {
-                "version": 1,
-                "midiSettings": {
-                    "instrument": "acoustic_grand_piano"
-                }
-            }
+            fallbackConfig = {}
         
         with open(configPath, "w") as file:
             json.dump(fallbackConfig, file, indent=2)
@@ -66,7 +59,7 @@ def createFallbackConfig():
     except Exception as e:
         logger.error(f"Failed to create fallback: {str(e)}")
         
-        minimalConfig = {"version": 1}
+        minimalConfig = {}
         with open(configPath, "w") as file:
             json.dump(minimalConfig, file, indent=2)
         return minimalConfig
