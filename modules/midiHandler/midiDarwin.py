@@ -205,69 +205,37 @@ def parseMidi(message):
                 simulateKey(message.type, message.note, message.velocity)
         except IndexError:
             pass
-    return sustainActive
 
 def playMidiOnce(midiFile):
-    global sustainActive, paused
+    global sustainActive
     mid = mido.MidiFile(midiFile, clip=True)
     startTime = time.monotonic()
     currentTime = 0
-    wasPaused = False
-    
     for msg in mid:
         if stopEvent.is_set() or closeThread:
             return False
-        
         adjustedDelay = msg.time / playbackSpeed
         if configuration.configData["midiPlayer"]["randomFail"]["enabled"] and not msg.is_meta:
             if random.random() < configuration.configData["midiPlayer"]["randomFail"]["speed"] / 100:
                 speedFactor = random.uniform(0.5, 1.5)
                 adjustedDelay *= speedFactor
-        
         currentTime += adjustedDelay
         targetTime = startTime + currentTime
-        
         while time.monotonic() < targetTime:
             if stopEvent.is_set() or closeThread:
                 return False
-            
-            if paused and not wasPaused:
-                wasPaused = True
-                if configuration.configData["midiPlayer"]["releaseOnPause"]:
-                    for key in list(heldKeys):
-                        release(key)
-                    if sustainActive:
-                        release("space")
-                        sustainActive = False
-            
-            if not paused and wasPaused:
-                wasPaused = False
-
             while paused and not (stopEvent.is_set() or closeThread):
                 pauseStart = time.monotonic()
                 time.sleep(0.05)
                 pauseDuration = time.monotonic() - pauseStart
                 startTime += pauseDuration
                 targetTime += pauseDuration
-            
             remaining = targetTime - time.monotonic()
             if remaining > 0:
                 sleepChunk = min(remaining, 0.005)
                 time.sleep(sleepChunk)
-                
         if msg.is_meta:
             continue
-        
-        if paused:
-            if msg.type == "control_change" and msg.control == 64:
-                if not configuration.configData["midiPlayer"]["sustain"]:
-                    continue
-                if msg.value > configuration.configData["midiPlayer"]["sustainCutoff"]:
-                    sustainActive = True
-                else:
-                    sustainActive = False
-            continue
-        
         if hasattr(msg, "note"):
             if msg.type == "note_on" and msg.velocity > 0:
                 if configuration.configData["midiPlayer"]["randomFail"]["enabled"] and random.random() < configuration.configData["midiPlayer"]["randomFail"]["transpose"] / 100:
@@ -291,9 +259,7 @@ def playMidiOnce(midiFile):
                     parseMidi(msg)
                     msg.note = original
                     continue
-                
         parseMidi(msg)
-    
     return True
 
 def playMidiFile(midiFile):
@@ -350,17 +316,11 @@ def startPlayback(midiFile, updateCallback=None):
     playThread.start()
 
 def pausePlayback():
-    global paused, sustainActive
+    global paused
     paused = not paused
-    
-    if paused:
-        if configuration.configData["midiPlayer"]["releaseOnPause"]:
-            for key in list(heldKeys):
-                release(key)
-            if sustainActive:
-                release("space")
-                sustainActive = False
-    
+    if paused and configuration.configData["midiPlayer"]["releaseOnPause"]:
+        for key in list(heldKeys):
+            release(key)
     log("Playback paused." if paused else "Playback resumed.")
 
 def changeSpeed(amount):
