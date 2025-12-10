@@ -140,23 +140,33 @@ def loadSavedFile():
     try:
         midiList = configuration.configData['midiPlayer'].get('midiList', [])
         currentFile = configuration.configData['midiPlayer'].get('currentFile', '')
-
+        
         midiList = [f for f in midiList if os.path.exists(f)]
         configuration.configData['midiPlayer']['midiList'] = midiList
-
+        
         if currentFile and not os.path.exists(currentFile):
             currentFile = ""
             configuration.configData['midiPlayer']['currentFile'] = ""
-
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
-
+        
+        with open(configuration.configPath, 'w') as configFile:
+            json.dump(configuration.configData, configFile, indent=2)
+        
         entryValues = list(MidiPlayerTab.filePathEntry.cget("values"))
+        
+        downloadFolder = os.path.join(configuration.baseDirectory, "Midis")
+        if os.path.exists(downloadFolder):
+            for filename in os.listdir(downloadFolder):
+                if filename.lower().endswith(('.mid', '.midi')):
+                    filePath = os.path.join(downloadFolder, filename)
+                    if filePath not in entryValues and filePath not in midiList:
+                        entryValues.append(filePath)
+        
         for p in midiList:
             if p not in entryValues:
                 entryValues.append(p)
+        
         MidiPlayerTab.filePathEntry.configure(values=entryValues)
-
+        
         if currentFile:
             if currentFile not in entryValues:
                 entryValues.append(currentFile)
@@ -168,20 +178,20 @@ def loadSavedFile():
             MidiPlayerTab.timelineIndicator.configure(text=timelineText)
             logger.debug(f"loaded currentFile: {currentFile}")
             return
-
+        
         if midiList:
             firstFile = midiList[0]
             MidiPlayerTab.filePathEntry.set(firstFile)
             configuration.configData['midiPlayer']['currentFile'] = firstFile
-            with open(configuration.configPath, 'w') as config_file:
-                json.dump(configuration.configData, config_file, indent=2)
+            with open(configuration.configPath, 'w') as configFile:
+                json.dump(configuration.configData, configFile, indent=2)
             midiFileData = MidiFile(firstFile, clip=True)
             totalTime = midiFileData.length
             timelineText = f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}" if configuration.configData['appUI']['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(totalTime)))}"
             MidiPlayerTab.timelineIndicator.configure(text=timelineText)
             logger.debug(f"loaded firstFile: {firstFile}")
             return
-
+        
         MidiPlayerTab.filePathEntry.set("None")
         MidiPlayerTab.timelineIndicator.configure(text="0:00:00 / 0:00:00")
         logger.debug("no saved files found")
