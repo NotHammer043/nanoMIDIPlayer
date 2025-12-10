@@ -130,7 +130,7 @@ def parseMidi(message):
             release(key)
 
 def playMidiOnce(filePath):
-    mid = mido.MidiFile(filePath)
+    mid = mido.MidiFile(filePath, clip=True)
     startTime = time.monotonic()
     currentTime = 0
     for msg in mid:
@@ -206,7 +206,7 @@ def startPlayback(filePath, updateCallback=None):
     paused = False
     if playThread is not None and isinstance(playThread, threading.Thread) and playThread.is_alive():
         return
-    totalSeconds = mido.MidiFile(filePath).length
+    totalSeconds = mido.MidiFile(filePath, clip=True).length
     playThread = threading.Thread(target=playMidiFile, args=(filePath,), daemon=True)
     clockThreadRef = threading.Thread(target=clockThread, args=(totalSeconds, updateCallback), daemon=True)
     clockThreadRef.start()
