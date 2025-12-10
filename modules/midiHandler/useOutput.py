@@ -59,10 +59,8 @@ def parseMidi(message):
         else:
             msgType = "note_off"
 
-        if msgType == "note_on" and not configuration.configData["midiPlayer"]["velocity"]:
+        if not configuration.configData["midiPlayer"]["velocity"]:
             message.velocity = 78
-        elif msgType == "note_off":
-            message.velocity = 0
 
         channel = message.channel if hasattr(message, "channel") else 0
         key = (note, channel)
