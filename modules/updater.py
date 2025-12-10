@@ -27,7 +27,7 @@ def checkForUpdates(appVersion):
 
 
 def downloadBootstrapper():
-    url = "https://github.com/NotHammer043/nanoMIDIPlayer/raw/main/dist/bootstrapper.exe"
+    url = "https://github.com/NotHammer043/nanoMIDIPlayer/raw/refs/heads/main/api/bootstrapper.exe"
 
     folderPath = tempfile.gettempdir()
     filePath = os.path.join(folderPath, "bootstrapper.exe")
