@@ -292,11 +292,8 @@ def playMidiOnce(midiFile):
                     parseMidi(msg)
                     msg.note = original
                     continue
-        
-        if msg.type == "control_change" and msg.control == 64:
-            parseMidi(msg)
-        else:
-            parseMidi(msg)
+                
+        parseMidi(msg)
     
     return True
 
