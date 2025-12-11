@@ -238,9 +238,7 @@ def downloadMidi(url):
         if filepath not in midi_list:
             midi_list.append(filepath)
         configuration.configData['midiPlayer']['midiList'] = midi_list
-
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
 
         with open(filepath, "wb") as f:
             f.write(response.content)

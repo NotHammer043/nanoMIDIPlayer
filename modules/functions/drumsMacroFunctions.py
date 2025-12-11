@@ -63,8 +63,7 @@ def selectFile():
                 configuration.configData['drumsMacro']['midiList'] = []
             if filePath not in configuration.configData['drumsMacro']['midiList']:
                 configuration.configData['drumsMacro']['midiList'].append(filePath)
-            with open(configuration.configPath, 'w') as config_file:
-                json.dump(configuration.configData, config_file, indent=2)
+            configuration.configData.save()
 
             bindControls()
     except Exception as e:
@@ -83,8 +82,7 @@ def loadSavedFile():
             currentFile = ""
             configuration.configData['drumsMacro']['currentFile'] = ""
 
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
 
         entryValues = list(DrumsMacroTab.midiPathDropdown.cget("values"))
         for p in midiList:
@@ -108,8 +106,7 @@ def loadSavedFile():
             firstFile = midiList[0]
             DrumsMacroTab.midiPathDropdown.set(firstFile)
             configuration.configData['drumsMacro']['currentFile'] = firstFile
-            with open(configuration.configPath, 'w') as config_file:
-                json.dump(configuration.configData, config_file, indent=2)
+            configuration.configData.save()
             midiFileData = MidiFile(firstFile, clip=True)
             totalTime = midiFileData.length
             timelineText = f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}" if configuration.configData['appUI']['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(totalTime)))}"
@@ -128,8 +125,7 @@ def switchMidiEvent(event=None):
     try:
         midiFile = DrumsMacroTab.midiPathDropdown.get()
         configuration.configData['drumsMacro']['currentFile'] = midiFile
-        with open(configuration.configPath, 'w') as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
 
         midiFileData = MidiFile(midiFile, clip=True)
         totalTime = midiFileData.length

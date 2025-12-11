@@ -212,8 +212,23 @@ def startPlayback(midiFile, outputDevice, updateCallback=None):
     playThread.start()
 
 def pausePlayback():
-    global paused
+    global paused, sustainActive
     paused = not paused
+    
+    if paused and configuration.configData["midiPlayer"]["releaseOnPause"]:
+        if midiOut:
+            for note, channel in list(activeNotes):
+                try:
+                    midiOut.send(mido.Message("note_off", note=note, velocity=0, channel=channel))
+                    activeNotes.remove((note, channel))
+                except:
+                    pass
+            
+            if sustainActive:
+                sustainOff = mido.Message("control_change", control=64, value=0)
+                midiOut.send(sustainOff)
+                sustainActive = False
+    
     log("Playback paused." if paused else "Playback resumed.")
 
 def changeSpeed(amount):

@@ -340,16 +340,14 @@ def setHotkey(keyType):
             for btn in buttons[keyType]:
                 btn.configure(text=oldHotkey.upper(), state="normal")
             configuration.configData["hotkeys"][keyType] = oldHotkey
-            with open(configuration.configPath, 'w') as configFile:
-                json.dump(configuration.configData, configFile, indent=2)
+            configuration.configData.save()
             conflictAction = [k for k, v in currentHotkeys.items() if v == newHotkey][0]
             tkinter.messagebox.showinfo(title="Keybind Conflict", message=f"This keybind is in use!\n{conflictAction}: {newHotkey}", icon='warning')
         else:
             for btn in buttons[keyType]:
                 btn.configure(text=newHotkey.upper(), state="normal")
             configuration.configData["hotkeys"][keyType] = newHotkey
-            with open(configuration.configPath, 'w') as configFile:
-                json.dump(configuration.configData, configFile, indent=2)
+            configuration.configData.save()
 
         global hotkeyButtonActive, hotkeyHook
         if osName == "Windows" and hotkeyHook:
@@ -416,8 +414,7 @@ def refreshOutputDevices():
         MidiPlayerTab.outputDeviceDropdown.set(defaultDevice)
         MidiPlayerTab.midiToggleSwitch.configure(state="disabled")
         configuration.configData["midiPlayer"]['useMIDIOutput'] = False
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
     else:
         defaultDevice = loopbeDevice if loopbeDevice else devices[0]
         MidiPlayerTab.outputDeviceDropdown.configure(values=devices)

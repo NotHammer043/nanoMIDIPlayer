@@ -7,6 +7,8 @@ import sys
 import signal
 import threading
 import argparse
+import time
+import errno
 
 from PIL import Image
 from ui.midiPlayer import MidiPlayerTab
@@ -23,7 +25,7 @@ from modules import configuration
 from modules import updater
 from modules import telemetry
 
-appVersion = "v11.69.67"
+appVersion = "v11.69.679"
 osName = platform.system()
 
 if osName == "Darwin":
@@ -34,23 +36,56 @@ documentsDir = os.path.join(os.path.expanduser("~"), "Documents")
 # LOGS
 logger = logging.getLogger("nanoMIDIPlayer")
 
-documentsDir = os.path.join(os.path.expanduser("~"), "Documents")
-
 class FlushFileHandler(logging.FileHandler):
     def emit(self, record):
         super().emit(record)
         self.flush()
 
+def safeDelete(filepath, retries=3, delay=0.1):
+    for attempt in range(retries):
+        try:
+            os.remove(filepath)
+            return True
+        except PermissionError:
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                return False
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                return True
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                return False
+    return False
+
 def initLogging():
     logDir = os.path.join(documentsDir, "nanoMIDIPlayer", "logs")
     os.makedirs(logDir, exist_ok=True)
 
-    logFiles = sorted(
-        [f for f in os.listdir(logDir) if f.startswith("nanoMIDIPlayer_") and f.endswith(".log")],
-        key=lambda f: os.path.getmtime(os.path.join(logDir, f))
-    )
-    for oldLog in logFiles[:-9]:
-        os.remove(os.path.join(logDir, oldLog))
+    try:
+        logFiles = []
+        for f in os.listdir(logDir):
+            if f.startswith("nanoMIDIPlayer_") and f.endswith(".log"):
+                full_path = os.path.join(logDir, f)
+                try:
+                    mtime = os.path.getmtime(full_path)
+                    logFiles.append((full_path, mtime))
+                except (OSError, FileNotFoundError):
+                    continue
+        
+        if logFiles:
+            logFiles.sort(key=lambda x: x[1])
+            files_to_keep = 9
+            
+            if len(logFiles) > files_to_keep:
+                files_to_delete = logFiles[:-(files_to_keep)]
+                for filepath, _ in files_to_delete:
+                    safeDelete(filepath)
+    
+    except Exception as e:
+        pass
 
     logFile = os.path.join(
         logDir,
