@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       target_branch:
-        description: "Target Branch"
+        description: "Push Branch"
         required: true
         default: "beta"
   pull_request:
