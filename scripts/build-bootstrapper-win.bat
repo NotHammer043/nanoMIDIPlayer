@@ -25,7 +25,7 @@ pyinstaller --onefile --noconsole --noconfirm ^
     --paths="." ^
     --name="bootstrapper" ^
     --icon=assets\icons\integrated\icon.ico ^
-    main.py
+    api\bootstrapper.py
 
 echo =^> Cleaning up temporary files...
 del /F /Q *.spec
