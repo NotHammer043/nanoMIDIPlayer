@@ -1,10 +1,7 @@
 import platform
-import base64
 import os
-import json
 import tkinter as tk
 
-from io import BytesIO
 from PIL import Image, ImageTk
 from modules import configuration
 from modules.functions import mainFunctions
