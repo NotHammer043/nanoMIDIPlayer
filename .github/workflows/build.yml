@@ -1,8 +1,7 @@
 name: Build Cross-Platform Artifacts
 
 on:
-  push:
-    branches: [ beta ]
+  workflow_dispatch:
   pull_request:
 
 permissions:

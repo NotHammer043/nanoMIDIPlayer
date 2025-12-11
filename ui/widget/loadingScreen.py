@@ -39,7 +39,6 @@ class LoadingScreen(tk.Tk):
         self.photo = ImageTk.PhotoImage(image)
         self.label = tk.Label(self, image=self.photo, bg="black")
         self.label.pack()
-        configuration.checkConfig()
         activeThemePath = os.path.join(assetsDirectory, "activeTheme.json")
         if configuration.configData["appUI"]["forceTheme"] or not os.path.exists(activeThemePath):
             customTheme.loadTheme()

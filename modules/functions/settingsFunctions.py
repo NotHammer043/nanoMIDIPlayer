@@ -33,8 +33,7 @@ except Exception as e:
 def switchTopMost():
     try:
         configuration.configData['appUI']['topmost'] = switchTopMostvar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("TopMost switched to %s", switchTopMostvar.get())
     except Exception as e:
         logger.exception("Error in switchTopMost")
@@ -47,8 +46,7 @@ def switchTopMost():
         app.wm_attributes("-topmost", state)
 
         configuration.configData['appUI']['topmost'] = state
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("TopMost switched to %s", state)
     except Exception as e:
         logger.exception("Error in switchTopMost: %s", e)
@@ -56,8 +54,7 @@ def switchTopMost():
 def switchConsole():
     try:
         configuration.configData['appUI']['console'] = switchConsolevar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("Console switched to %s", switchConsolevar.get())
     except Exception as e:
         logger.exception("Error in switchConsole")
@@ -65,8 +62,7 @@ def switchConsole():
 def switchToolTip():
     try:
         configuration.configData['appUI']['tooltip'] = switchToolTipvar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("ToolTip switched to %s", switchToolTipvar.get())
     except Exception as e:
         logger.exception("Error in switchToolTip")
@@ -74,8 +70,7 @@ def switchToolTip():
 def switchTimestamp():
     try:
         configuration.configData['appUI']['timestamp'] = switchTimestampvar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("Timestamp switched to %s", switchTimestampvar.get())
     except Exception as e:
         logger.exception("Error in switchTimestamp")
@@ -83,8 +78,7 @@ def switchTimestamp():
 def switchCheckForUpdates():
     try:
         configuration.configData['appUI']['checkForUpdates'] = switchCheckForUpdatesvar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("Check For Updates switched to %s", switchCheckForUpdatesvar.get())
     except Exception as e:
         logger.exception("Error in switchCheckForUpdates")
@@ -92,8 +86,7 @@ def switchCheckForUpdates():
 def switchForceTheme():
     try:
         configuration.configData['appUI']['forceTheme'] = switchForceThemevar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("ForceTheme switched to %s", switchForceThemevar.get())
     except Exception as e:
         logger.exception("Error in switchForceTheme")
@@ -114,8 +107,7 @@ except Exception as e:
 def switchMidiCustomHoldLength():
     try:
         configuration.configData["midiPlayer"]['customHoldLength']['enabled'] = switchMidiCustomHoldLengthvar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         midiCustomHoldLengthStatus()
         logger.info("MidiCustomHoldLength switched to %s", switchMidiCustomHoldLengthvar.get())
     except Exception as e:
@@ -124,8 +116,7 @@ def switchMidiCustomHoldLength():
 def switchMidiRandomFail():
     try:
         configuration.configData["midiPlayer"]['randomFail']['enabled'] = switchMidiRandomFailvar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         midiRandomFailStatus()
         logger.info("MidiRandomFail switched to %s", switchMidiRandomFailvar.get())
     except Exception as e:
@@ -134,8 +125,7 @@ def switchMidiRandomFail():
 def switchMidiLoopSong():
     try:
         configuration.configData['midiPlayer']['loopSong'] = switchMidiLoopSongvar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("MidiLoopSong switched to %s", switchMidiLoopSongvar.get())
     except Exception as e:
         logger.exception("Error in switchMidiLoopSong")
@@ -143,8 +133,7 @@ def switchMidiLoopSong():
 def switchMidiReleaseOnPause():
     try:
         configuration.configData['midiPlayer']['releaseOnPause'] = switchMidiReleaseOnPausevar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("MidiReleaseOnPause switched to %s", switchMidiReleaseOnPausevar.get())
     except Exception as e:
         logger.exception("Error in switchMidiReleaseOnPause")
@@ -152,8 +141,7 @@ def switchMidiReleaseOnPause():
 def midiModuleSelect(value):
     try:
         configuration.configData["midiPlayer"]["inputModule"] = value
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("MidiModule selected: %s", value)
     except Exception as e:
         logger.exception("Error in midiModuleSelect")
@@ -163,8 +151,7 @@ def midiClearMidiList():
         from modules.functions import midiPlayerFunctions
         configuration.configData["midiPlayer"]["midiList"] = []
         configuration.configData["midiPlayer"]["currentFile"] = ""
-        with open(configuration.configPath, "w") as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
         MidiPlayerTab.filePathEntry.configure(values=[])
         MidiPlayerTab.filePathEntry.set("")
         midiPlayerFunctions.loadSavedFile()
@@ -189,8 +176,7 @@ except Exception as e:
 def switchDrumsLoopSong():
     try:
         configuration.configData['drumsMacro']['loopSong'] = switchDrumsLoopSongvar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("DrumsLoopSong switched to %s", switchDrumsLoopSongvar.get())
     except Exception as e:
         logger.exception("Error in switchDrumsLoopSong")
@@ -198,8 +184,7 @@ def switchDrumsLoopSong():
 def switchDrumsReleaseOnPause():
     try:
         configuration.configData['drumsMacro']['releaseOnPause'] = switchDrumsReleaseOnPausevar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("DrumsReleaseOnPause switched to %s", switchDrumsReleaseOnPausevar.get())
     except Exception as e:
         logger.exception("Error in switchDrumsReleaseOnPause")
@@ -207,8 +192,7 @@ def switchDrumsReleaseOnPause():
 def switchDrumsCustomHoldLength():
     try:
         configuration.configData["drumsMacro"]['customHoldLength']['enabled'] = switchDrumsCustomHoldLengthvar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         drumsCustomHoldLengthStatus()
         logger.info("DrumsCustomHoldLength switched to %s", switchDrumsCustomHoldLengthvar.get())
     except Exception as e:
@@ -217,8 +201,7 @@ def switchDrumsCustomHoldLength():
 def switchDrumsRandomFail():
     try:
         configuration.configData["drumsMacro"]['randomFail']['enabled'] = switchDrumsRandomFailvar.get() == "on"
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         drumsRandomFailStatus()
         logger.info("DrumsRandomFail switched to %s", switchDrumsRandomFailvar.get())
     except Exception as e:
@@ -227,8 +210,7 @@ def switchDrumsRandomFail():
 def drumsModuleSelect(value):
     try:
         configuration.configData["drumsMacro"]["inputModule"] = value
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         logger.info("DrumsModule selected: %s", value)
     except Exception as e:
         logger.exception("Error in drumsModuleSelect")
@@ -238,8 +220,7 @@ def drumsClearMidiList():
         from modules.functions import drumsMacroFunctions
         configuration.configData["drumsMacro"]["midiList"] = []
         configuration.configData["drumsMacro"]["currentFile"] = ""
-        with open(configuration.configPath, "w") as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
         DrumsMacroTab.midiPathDropdown.configure(values=[])
         DrumsMacroTab.midiPathDropdown.set("")
         drumsMacroFunctions.loadSavedFile()
@@ -324,8 +305,7 @@ def changeMidiNoteLength(value):
     try:
         val = float(value)
         configuration.configData["midiPlayer"]["customHoldLength"]["noteLength"] = val
-        with open(configuration.configPath, "w") as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
         logger.debug("MidiNoteLength changed to %s", val)
     except Exception as e:
         logger.exception("Error in changeMidiNoteLength")
@@ -334,8 +314,7 @@ def changeMidiSpeedFail(value):
     try:
         val = float(value)
         configuration.configData["midiPlayer"]["randomFail"]["speed"] = val
-        with open(configuration.configPath, "w") as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
         logger.debug("MidiSpeedFail changed to %s", val)
     except Exception as e:
         logger.exception("Error in changeMidiSpeedFail")
@@ -344,8 +323,7 @@ def changeMidiTransposeFail(value):
     try:
         val = float(value)
         configuration.configData["midiPlayer"]["randomFail"]["transpose"] = val
-        with open(configuration.configPath, "w") as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
         logger.debug("MidiTransposeFail changed to %s", val)
     except Exception as e:
         logger.exception("Error in changeMidiTransposeFail")
@@ -354,8 +332,7 @@ def changeMidiDecreaseSize(value):
     try:
         val = float(value)
         configuration.configData["midiPlayer"]["decreaseSize"] = val
-        with open(configuration.configPath, "w") as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
         logger.debug("MidiDecreaseSize changed to %s", val)
     except Exception as e:
         logger.exception("Error in changeMidiDecreaseSize")
@@ -364,8 +341,7 @@ def changeDrumsNoteLength(value):
     try:
         val = float(value)
         configuration.configData["drumsMacro"]["customHoldLength"]["noteLength"] = val
-        with open(configuration.configPath, "w") as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
         logger.debug("DrumsNoteLength changed to %s", val)
     except Exception as e:
         logger.exception("Error in changeDrumsNoteLength")
@@ -374,8 +350,7 @@ def changeDrumsSpeedFail(value):
     try:
         val = float(value)
         configuration.configData["drumsMacro"]["randomFail"]["speed"] = val
-        with open(configuration.configPath, "w") as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
         logger.debug("DrumsSpeedFail changed to %s", val)
     except Exception as e:
         logger.exception("Error in changeDrumsSpeedFail")
@@ -384,8 +359,7 @@ def changeDrumsDecreaseSize(value):
     try:
         val = float(value)
         configuration.configData["drumsMacro"]["decreaseSize"] = val
-        with open(configuration.configPath, "w") as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
         logger.debug("DrumsDecreaseSize changed to %s", val)
     except Exception as e:
         logger.exception("Error in changeDrumsDecreaseSize")
@@ -394,8 +368,7 @@ def changeMidiToQWERTYSustainCutoff(value):
     try:
         val = float(value)
         configuration.configData["midiToQwerty"]["sustainCutoff"] = val
-        with open(configuration.configPath, "w") as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
         logger.debug("MidiToQWERTYSustainCutoff changed to %s", val)
     except Exception as e:
         logger.exception("Error in changeMidiToQWERTYSustainCutoff")
@@ -404,8 +377,7 @@ def changeMidiToQWERTYNoteLength(value):
     try:
         val = float(value)
         configuration.configData["midiToQwerty"]["customHoldLength"]["noteLength"] = val
-        with open(configuration.configPath, "w") as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
         logger.debug("MidiToQWERTYNoteLength changed to %s", val)
     except Exception as e:
         logger.exception("Error in changeMidiToQWERTYNoteLength")

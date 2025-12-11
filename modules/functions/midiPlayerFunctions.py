@@ -46,8 +46,7 @@ def switchUseMIDI():
     logger.info("switchUseMIDI called")
     try:
         configuration.configData["midiPlayer"]['useMIDIOutput'] = switchUseMIDIvar.get() == "on"
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
 
         mainFunctions.clearConsole()
         mainFunctions.refreshOutputDevices()
@@ -62,8 +61,7 @@ def switchSustain():
     logger.info("switchSustain called")
     try:
         configuration.configData['midiPlayer']['sustain'] = switchSustainvar.get() == "on"
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
     except Exception as e:
         logger.exception(f"switchSustain error: {e}")
 
@@ -71,8 +69,7 @@ def switchNoDoubles():
     logger.info("switchNoDoubles called")
     try:
         configuration.configData['midiPlayer']['noDoubles'] = switchNoDoublesvar.get() == "on"
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
     except Exception as e:
         logger.exception(f"switchNoDoubles error: {e}")
 
@@ -80,8 +77,7 @@ def switchVelocity():
     logger.info("switchVelocity called")
     try:
         configuration.configData['midiPlayer']['velocity'] = switchVelocityvar.get() == "on"
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
     except Exception as e:
         logger.exception(f"switchVelocity error: {e}")
 
@@ -89,8 +85,7 @@ def switch88Keys():
     logger.info("switch88Keys called")
     try:
         configuration.configData['midiPlayer']['88Keys'] = switch88Keysvar.get() == "on"
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
     except Exception as e:
         logger.exception(f"switch88Keys error: {e}")
 
@@ -128,8 +123,7 @@ def selectFile():
                 configuration.configData['midiPlayer']['midiList'] = []
             if filePath not in configuration.configData['midiPlayer']['midiList']:
                 configuration.configData['midiPlayer']['midiList'].append(filePath)
-            with open(configuration.configPath, 'w') as config_file:
-                json.dump(configuration.configData, config_file, indent=2)
+            configuration.configData.save()
 
             bindControls()
     except Exception as e:
@@ -148,8 +142,7 @@ def loadSavedFile():
             currentFile = ""
             configuration.configData['midiPlayer']['currentFile'] = ""
         
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
+        configuration.configData.save()
         
         entryValues = list(MidiPlayerTab.filePathEntry.cget("values"))
         
@@ -183,8 +176,7 @@ def loadSavedFile():
             firstFile = midiList[0]
             MidiPlayerTab.filePathEntry.set(firstFile)
             configuration.configData['midiPlayer']['currentFile'] = firstFile
-            with open(configuration.configPath, 'w') as configFile:
-                json.dump(configuration.configData, configFile, indent=2)
+            configuration.configData.save()
             midiFileData = MidiFile(firstFile, clip=True)
             totalTime = midiFileData.length
             timelineText = f"0:00:00 / {str(datetime.timedelta(seconds=int(totalTime)))}" if configuration.configData['appUI']['timestamp'] else f"X:XX:XX / {str(datetime.timedelta(seconds=int(totalTime)))}"
@@ -203,8 +195,7 @@ def switchMidiEvent(event=None):
     try:
         midiFile = MidiPlayerTab.filePathEntry.get()
         configuration.configData['midiPlayer']['currentFile'] = midiFile
-        with open(configuration.configPath, 'w') as file:
-            json.dump(configuration.configData, file, indent=2)
+        configuration.configData.save()
 
         midiFileData = MidiFile(midiFile, clip=True)
         totalTime = midiFileData.length

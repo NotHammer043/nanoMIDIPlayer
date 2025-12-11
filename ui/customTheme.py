@@ -4,7 +4,6 @@ import platform
 import io
 import base64
 import shutil
-import logging
 from PIL import Image
 import customtkinter as ctk
 import ui.customTheme as customTheme
@@ -13,8 +12,6 @@ import sys
 
 from modules import configuration
 import requests
-
-logger = logging.getLogger(__name__)
 
 osName = platform.system()
 
@@ -38,240 +35,214 @@ def resourcePath(relativePath):
 
 defaultThemePath = resourcePath("assets/defaultTheme.json")
 
-def validateJsonFile(filepath):
-    try:
-        with open(filepath, 'r') as f:
-            content = f.read().strip()
-            if not content:
-                return False, "File is empty"
-            json.loads(content)
-            return True, None
-    except json.JSONDecodeError as e:
-        return False, f"Invalid JSON: {str(e)}"
-    except Exception as e:
-        return False, f"File error: {str(e)}"
+remoteThemeUrl = "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/theme.json"
 
-def createFallbackTheme():
-    try:
-        fallbackTheme = {}
+class ThemeDict(dict):
+    def __init__(self, filePath, defaultPath, remoteUrl):
+        self.filePath = filePath
+        self.defaultPath = defaultPath
+        self.remoteUrl = remoteUrl
+        self.images = {}
+        self.fonts = {}
         
-        if os.path.exists(defaultThemePath):
-            isValid, error = validateJsonFile(defaultThemePath)
-            if isValid:
-                with open(defaultThemePath, "r") as f:
-                    fallbackTheme = json.load(f)
-                logger.info("Loaded fallback from defaultTheme.json")
-            else:
-                logger.error(f"defaultTheme.json invalid: {error}")
-        else:
-            logger.error("defaultTheme.json not found")
-            
-            fallbackTheme = {
-                "Theme": {
-                    "Icons": {},
-                    "GlobalFont": {
-                        "Windows": "Segoe UI",
-                        "macOS": "SF Pro",
-                        "Linux": "Ubuntu"
-                    }
-                }
-            }
+        if not os.path.exists(self.filePath):
+            self.copyDefaultTheme()
         
-        with open(activeThemePath, "w") as file:
-            json.dump(fallbackTheme, file, indent=2)
-        logger.info("Created fallback theme")
-        return fallbackTheme
-        
-    except Exception as e:
-        logger.error(f"Failed to create fallback: {str(e)}")
-        
-        minimalTheme = {"Theme": {}}
-        with open(activeThemePath, "w") as file:
-            json.dump(minimalTheme, file, indent=2)
-        return minimalTheme
-
-def loadThemeFile():
-    global activeThemeData
+        self.loadTheme()
+        self.updateModuleAttributes()
     
-    themeValid = False
-    activeThemeData = {}
-    
-    if not os.path.exists(activeThemePath):
-        logger.info("Theme file doesn't exist, creating initial theme")
-        activeThemeData = createFallbackTheme()
-        return activeThemeData
-    
-    isValid, error = validateJsonFile(activeThemePath)
-    if isValid:
+    def loadTheme(self):
         try:
-            with open(activeThemePath, "r") as themeFile:
-                activeThemeData = json.load(themeFile)
-            if isinstance(activeThemeData, dict) and "Theme" in activeThemeData:
-                themeValid = True
-                logger.info("Loaded existing theme")
-            else:
-                logger.error("Theme is missing required 'Theme' key")
-        except Exception as e:
-            logger.error(f"Error loading theme: {str(e)}")
-    else:
-        logger.warning(f"Theme validation failed: {error}")
+            with open(self.filePath, "r") as themeFile:
+                data = json.load(themeFile)
+                super().__init__(data)
+                self.loadImages()
+        except (json.JSONDecodeError, FileNotFoundError):
+            self.repairCorruptedTheme()
     
-    if not themeValid:
-        logger.warning("Using fallback theme")
-        activeThemeData = createFallbackTheme()
-    
-    return activeThemeData
-
-def checkThemeUpdates():
-    global activeThemeData
-    
-    loadThemeFile()
-    
-    remoteThemeData = {}
-    url = "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/assets/defaultTheme.json"
-    
-    try:
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            try:
-                remoteThemeData = response.json()
-                logger.info("Successfully fetched remote theme")
-            except json.JSONDecodeError as e:
-                logger.error(f"Invalid JSON in remote theme: {str(e)}")
-                remoteThemeData = {}
+    def copyDefaultTheme(self):
+        if os.path.exists(self.defaultPath):
+            shutil.copy(self.defaultPath, self.filePath)
         else:
-            logger.warning(f"Failed to retrieve remote theme. Code: {response.status_code}")
-    except requests.exceptions.Timeout:
-        logger.warning("Remote theme fetch timeout")
-    except requests.exceptions.ConnectionError:
-        logger.warning("No internet connection for theme update")
-    except Exception as e:
-        logger.error(f"Error fetching remote theme: {str(e)}")
+            self.fetchOnlineDefault()
     
-    if not remoteThemeData and os.path.exists(defaultThemePath):
-        isValid, error = validateJsonFile(defaultThemePath)
-        if isValid:
-            try:
-                with open(defaultThemePath, "r") as f:
-                    remoteThemeData = json.load(f)
-                logger.info("Loaded defaultTheme.json as fallback")
-            except Exception as e:
-                logger.error(f"Error loading defaultTheme.json: {str(e)}")
-        else:
-            logger.error(f"defaultTheme.json invalid: {error}")
-    
-    if not remoteThemeData:
-        logger.warning("No valid remote theme source available")
-        return
-    
-    try:
-        updated = False
-        
-        if not isinstance(remoteThemeData, dict) or "Theme" not in remoteThemeData:
-            logger.error("Remote theme is missing required structure")
-            return
-        
-        themeUpdated = False
-        themeKeysAdded = []
-        
-        def recursiveUpdate(current, remote, path=""):
-            nonlocal themeUpdated
-            for key, value in remote.items():
-                fullPath = f"{path}.{key}" if path else key
-                if key not in current:
-                    current[key] = value
-                    themeUpdated = True
-                    themeKeysAdded.append(fullPath)
-                elif isinstance(value, dict) and isinstance(current[key], dict):
-                    recursiveUpdate(current[key], value, fullPath)
-        
-        recursiveUpdate(activeThemeData, remoteThemeData)
-        
-        if themeUpdated:
-            backupPath = activeThemePath + ".backup"
-            try:
-                shutil.copy2(activeThemePath, backupPath)
-                logger.info(f"Created theme backup: {backupPath}")
-            except Exception as e:
-                logger.error(f"Failed to create backup: {str(e)}")
-            
-            try:
-                with open(activeThemePath, "w") as file:
-                    json.dump(activeThemeData, file, indent=2)
-                logger.info(f"Updated Theme with keys: {themeKeysAdded}")
-            except Exception as e:
-                logger.error(f"Failed to write updated theme: {str(e)}")
+    def fetchOnlineDefault(self):
+        try:
+            response = requests.get(self.remoteUrl, timeout=5)
+            if response.status_code == 200:
+                themeData = response.json()
+                defaultTheme = themeData.get("defaultTheme")
+                availableThemes = themeData.get("availableThemes", {})
+                defaultThemeUrl = availableThemes.get(str(defaultTheme))
                 
-                try:
-                    shutil.copy2(backupPath, activeThemePath)
-                    logger.info("Restored theme from backup")
-                except:
-                    createFallbackTheme()
-        else:
-            logger.info("Theme Up to Date")
-            
-    except Exception as e:
-        logger.error(f"Theme update failed: {str(e)}")
+                if defaultThemeUrl:
+                    themeResponse = requests.get(defaultThemeUrl, timeout=5)
+                    if themeResponse.status_code == 200:
+                        with open(self.filePath, "w") as file:
+                            file.write(themeResponse.text)
+                        return
+        except:
+            pass
         
-        try:
-            activeThemeData = createFallbackTheme()
-        except Exception as e2:
-            logger.critical(f"Failed to create fallback: {str(e2)}")
-
-def safeB64ToImage(b64string, defaultName):
-    try:
-        if not b64string:
-            raise ValueError("Empty base64 string")
+        if os.path.exists(self.defaultPath):
+            shutil.copy(self.defaultPath, self.filePath)
+    
+    def repairCorruptedTheme(self):
+        self.fetchOnlineDefault()
+        self.loadTheme()
+    
+    def b64ToImage(self, b64string):
+        if b64string in self.images:
+            return self.images[b64string]
         
         data = base64.b64decode(b64string)
-        return Image.open(io.BytesIO(data))
-    except Exception as e:
-        logger.error(f"Failed to decode {defaultName} image: {str(e)}")
-        return Image.new('RGBA', (32, 32), (255, 255, 255, 255))
+        image = Image.open(io.BytesIO(data))
+        self.images[b64string] = image
+        return image
+    
+    def loadImages(self):
+        try:
+            iconB64 = self["Theme"]["Icons"]["icon"]
+            bannerB64 = self["Theme"]["Icons"]["banner"]
+            resetB64 = self["Theme"]["Icons"]["reset"]
+            pianoB64 = self["Theme"]["Icons"]["piano"]
+            drumB64 = self["Theme"]["Icons"]["drum"]
+            downloadB64 = self["Theme"]["Icons"]["download"]
+            searchB64 = self["Theme"]["Icons"]["search"]
+            settingsB64 = self["Theme"]["Icons"]["cogwheel"]
+            keyboardB64 = self["Theme"]["Icons"]["keyboard"]
+            infoB64 = self["Theme"]["Icons"]["info"]
+            
+            self.iconImage = self.b64ToImage(iconB64)
+            self.bannerImage = self.b64ToImage(bannerB64)
+            self.resetImage = self.b64ToImage(resetB64)
+            self.pianoImage = self.b64ToImage(pianoB64)
+            self.drumImage = self.b64ToImage(drumB64)
+            self.downloadImage = self.b64ToImage(downloadB64)
+            self.searchImage = self.b64ToImage(searchB64)
+            self.settingsImage = self.b64ToImage(settingsB64)
+            self.keyboardImage = self.b64ToImage(keyboardB64)
+            self.infoImage = self.b64ToImage(infoB64)
+            
+            self.logoImage = ctk.CTkImage(self.bannerImage, size=(86, 26))
+            self.resetImageCTk = ctk.CTkImage(self.resetImage, size=(16, 16))
+            self.pianoImageCTk = ctk.CTkImage(self.pianoImage, size=(20, 20))
+            self.drumImageCTk = ctk.CTkImage(self.drumImage, size=(20, 20))
+            self.downloadImageFile = ctk.CTkImage(self.downloadImage, size=(18, 18))
+            self.searchImageFile = ctk.CTkImage(self.searchImage, size=(18, 18))
+            self.settingsImageCTk = ctk.CTkImage(self.settingsImage, size=(18, 18))
+            self.keyboardImageCTk = ctk.CTkImage(self.keyboardImage, size=(18, 18))
+            self.infoImageCTk = ctk.CTkImage(self.infoImage, size=(18, 18))
+        except KeyError:
+            self.loadFallbackImages()
+    
+    def loadFallbackImages(self):
+        blackImage = Image.new("RGBA", (1, 1), (0, 0, 0, 255))
+        self.iconImage = blackImage
+        self.bannerImage = blackImage
+        self.resetImage = blackImage
+        self.pianoImage = blackImage
+        self.drumImage = blackImage
+        self.downloadImage = blackImage
+        self.searchImage = blackImage
+        self.settingsImage = blackImage
+        self.keyboardImage = blackImage
+        self.infoImage = blackImage
+        
+        self.logoImage = ctk.CTkImage(blackImage, size=(86, 26))
+        self.resetImageCTk = ctk.CTkImage(blackImage, size=(16, 16))
+        self.pianoImageCTk = ctk.CTkImage(blackImage, size=(20, 20))
+        self.drumImageCTk = ctk.CTkImage(blackImage, size=(20, 20))
+        self.downloadImageFile = ctk.CTkImage(blackImage, size=(18, 18))
+        self.searchImageFile = ctk.CTkImage(blackImage, size=(18, 18))
+        self.settingsImageCTk = ctk.CTkImage(blackImage, size=(18, 18))
+        self.keyboardImageCTk = ctk.CTkImage(blackImage, size=(18, 18))
+        self.infoImageCTk = ctk.CTkImage(blackImage, size=(18, 18))
+    
+    def updateModuleAttributes(self):
+        module = sys.modules[__name__]
+        
+        module.iconImage = self.iconImage
+        module.bannerImage = self.bannerImage
+        module.resetImage = self.resetImage
+        module.pianoImage = self.pianoImage
+        module.drumImage = self.drumImage
+        module.downloadImage = self.downloadImage
+        module.searchImage = self.searchImage
+        module.settingsImage = self.settingsImage
+        module.keyboardImage = self.keyboardImage
+        module.infoImage = self.infoImage
+        
+        module.logoImage = self.logoImage
+        module.resetImageCTk = self.resetImageCTk
+        module.pianoImageCTk = self.pianoImageCTk
+        module.drumImageCTk = self.drumImageCTk
+        module.downloadImageFile = self.downloadImageFile
+        module.searchImageFile = self.searchImageFile
+        module.settingsImageCTk = self.settingsImageCTk
+        module.keyboardImageCTk = self.keyboardImageCTk
+        module.infoImageCTk = self.infoImageCTk
+    
+    def __getitem__(self, key):
+        try:
+            return super().__getitem__(key)
+        except KeyError:
+            defaultTheme = self.getDefaultTheme()
+            if key in defaultTheme:
+                self[key] = defaultTheme[key]
+                self.saveTheme()
+                return self[key]
+            else:
+                raise KeyError(f"Theme key '{key}' not found")
+    
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self.saveTheme()
+    
+    def getDefaultTheme(self):
+        try:
+            response = requests.get(self.remoteUrl, timeout=5)
+            if response.status_code == 200:
+                themeData = response.json()
+                defaultTheme = themeData.get("defaultTheme")
+                availableThemes = themeData.get("availableThemes", {})
+                defaultThemeUrl = availableThemes.get(str(defaultTheme))
+                
+                if defaultThemeUrl:
+                    themeResponse = requests.get(defaultThemeUrl, timeout=5)
+                    if themeResponse.status_code == 200:
+                        return json.loads(themeResponse.text)
+        except:
+            pass
+        
+        if os.path.exists(self.defaultPath):
+            with open(self.defaultPath, "r") as f:
+                return json.load(f)
+        
+        return {}
+    
+    def saveTheme(self):
+        with open(self.filePath, "w") as file:
+            json.dump(dict(self), file, indent=2)
+    
+    def reload(self):
+        self.loadTheme()
+        self.updateModuleAttributes()
 
-def initializeImages():
-    global iconImage, bannerImage, resetImage, pianoImage, drumImage
-    global downloadImage, searchImage, settingsImage, keyboardImage, infoImage
-    global logoImage, resetImageCTk, pianoImageCTk, drumImageCTk
-    global downloadImageFile, searchImageFile, settingsImageCTk, keyboardImageCTk, infoImageCTk
-    
-    icons = activeThemeData.get("Theme", {}).get("Icons", {})
-    
-    iconImage = safeB64ToImage(icons.get("icon"), "icon")
-    bannerImage = safeB64ToImage(icons.get("banner"), "banner")
-    resetImage = safeB64ToImage(icons.get("reset"), "reset")
-    pianoImage = safeB64ToImage(icons.get("piano"), "piano")
-    drumImage = safeB64ToImage(icons.get("drum"), "drum")
-    downloadImage = safeB64ToImage(icons.get("download"), "download")
-    searchImage = safeB64ToImage(icons.get("search"), "search")
-    settingsImage = safeB64ToImage(icons.get("cogwheel"), "cogwheel")
-    keyboardImage = safeB64ToImage(icons.get("keyboard"), "keyboard")
-    infoImage = safeB64ToImage(icons.get("info"), "info")
-    
-    logoImage = ctk.CTkImage(bannerImage, size=(86, 26))
-    resetImageCTk = ctk.CTkImage(resetImage, size=(16, 16))
-    pianoImageCTk = ctk.CTkImage(pianoImage, size=(20, 20))
-    drumImageCTk = ctk.CTkImage(drumImage, size=(20, 20))
-    downloadImageFile = ctk.CTkImage(downloadImage, size=(18, 18))
-    searchImageFile = ctk.CTkImage(searchImage, size=(18, 18))
-    settingsImageCTk = ctk.CTkImage(settingsImage, size=(18, 18))
-    keyboardImageCTk = ctk.CTkImage(keyboardImage, size=(18, 18))
-    infoImageCTk = ctk.CTkImage(infoImage, size=(18, 18))
+activeThemeData = ThemeDict(activeThemePath, defaultThemePath, remoteThemeUrl)
 
 def initializeFonts():
     global globalFont11, globalFont12, globalFont14, globalFont20, globalFont40
     
-    fontConfig = activeThemeData.get("Theme", {}).get("GlobalFont", {})
-    
     if osName == "Windows":
-        family = fontConfig.get("Windows", "Segoe UI")
+        family = activeThemeData["Theme"]["GlobalFont"]["Windows"]
     elif osName == "Darwin":
-        family = fontConfig.get("macOS", "SF Pro")
+        family = activeThemeData["Theme"]["GlobalFont"]["macOS"]
     elif osName == "Linux":
-        family = fontConfig.get("Linux", "Ubuntu")
+        family = activeThemeData["Theme"]["GlobalFont"]["Linux"]
     else:
-        family = fontConfig.get("Windows", "Segoe UI")
-    
+        family = activeThemeData["Theme"]["GlobalFont"]["Windows"]
+
     globalFont11 = ctk.CTkFont(size=11, weight="bold", family=family)
     globalFont12 = ctk.CTkFont(size=12, weight="bold", family=family)
     globalFont14 = ctk.CTkFont(size=14, weight="bold", family=family)
@@ -280,25 +251,18 @@ def initializeFonts():
 
 def fetchThemes(event=None):
     try:
-        response = requests.get("https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/theme.json", timeout=10)
+        response = requests.get(remoteThemeUrl, timeout=5)
         response.raise_for_status()
         data = response.json()
         
-        themeNames = list(data.get("availableThemes", {}).keys())
+        themeNames = list(data["availableThemes"].keys())
         return themeNames
-    except requests.RequestException as e:
-        logger.error(f"Failed to fetch themes: {str(e)}")
-        return []
-    except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON in theme list: {str(e)}")
-        return []
-    except Exception as e:
-        logger.error(f"Unexpected error fetching themes: {str(e)}")
+    except:
         return []
 
 def loadTheme(event=None):
     try:
-        response = requests.get("https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/theme.json", timeout=10)
+        response = requests.get(remoteThemeUrl, timeout=10)
         response.raise_for_status()
         themeData = response.json()
         
@@ -310,43 +274,18 @@ def loadTheme(event=None):
         if defaultThemeUrl:
             themeResponse = requests.get(defaultThemeUrl, timeout=10)
             if themeResponse.status_code == 200:
-                isValid, error = validateJsonFileFromString(themeResponse.text)
-                if isValid:
-                    with open(activeThemePath, "w") as file:
-                        file.write(themeResponse.text)
-                    logger.info("Downloaded Theme")
-                    return True
-                else:
-                    logger.error(f"Downloaded theme invalid: {error}")
-    except Exception as e:
-        logger.error(f"Failed to fetch online theme: {str(e)}")
+                with open(activeThemePath, "w") as file:
+                    file.write(themeResponse.text)
+                activeThemeData.reload()
+                return
+    except:
+        pass
 
     try:
-        if os.path.exists(defaultThemePath):
-            isValid, error = validateJsonFile(defaultThemePath)
-            if isValid:
-                shutil.copy(defaultThemePath, activeThemePath)
-                logger.info("Loaded fallback defaultTheme.json")
-                return True
-            else:
-                logger.error(f"Fallback theme invalid: {error}")
-        else:
-            logger.error("Default theme file not found")
-    except Exception as e:
-        logger.error(f"Fallback failed: {str(e)}")
-    
-    return False
-
-def validateJsonFileFromString(content):
-    try:
-        if not content.strip():
-            return False, "Content is empty"
-        json.loads(content)
-        return True, None
-    except json.JSONDecodeError as e:
-        return False, f"Invalid JSON: {str(e)}"
-    except Exception as e:
-        return False, f"Validation error: {str(e)}"
+        shutil.copy(defaultThemePath, activeThemePath)
+        activeThemeData.reload()
+    except:
+        pass
 
 def switchTheme(event=None):
     from ui.settings import SettingsTab
@@ -355,75 +294,43 @@ def switchTheme(event=None):
 
     app = mainFunctions.getApp()
     value = SettingsTab.themeSelector.get()
-    
-    try:
-        configuration.configData['appUI']['forceTheme'] = False
-        with open(configuration.configPath, 'w') as configFile:
-            json.dump(configuration.configData, configFile, indent=2)
-    except Exception as e:
-        logger.error(f"Failed to update config: {str(e)}")
-    
-    themeSwitched = False
-    
+    configuration.configData['appUI']['forceTheme'] = False
+    configuration.configData.save()
+
     if "(Custom)" not in value:
-        try:
-            response = requests.get("https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/theme.json", timeout=10)
-            if response.status_code == 200:
-                themeData = response.json()
-                availableThemes = themeData.get("availableThemes", {})
-                if value in availableThemes:
-                    themeUrl = availableThemes[value]
-                    themeResponse = requests.get(themeUrl, timeout=10)
-                    if themeResponse.status_code == 200:
-                        isValid, error = validateJsonFileFromString(themeResponse.text)
-                        if isValid:
-                            with open(activeThemePath, 'w') as activeThemeFile:
-                                activeThemeFile.write(themeResponse.text)
-                            themeSwitched = True
-                            logger.info(f"Switched to theme: {value}")
-                        else:
-                            logger.error(f"Theme validation failed: {error}")
-                    else:
-                        logger.error(f"Failed to download theme. Code: {themeResponse.status_code}")
+        response = requests.get(remoteThemeUrl, timeout=5)
+        if response.status_code == 200:
+            themeData = response.json()
+            availableThemes = themeData["availableThemes"]
+            if value in availableThemes:
+                themeUrl = availableThemes[value]
+                themeResponse = requests.get(themeUrl, timeout=5)
+                if themeResponse.status_code == 200:
+                    with open(activeThemePath, 'w') as activeThemeFile:
+                        activeThemeFile.write(themeResponse.text)
+                    activeThemeData.reload()
                 else:
-                    logger.error(f"Theme '{value}' does not exist.")
+                    print(f"FAIL > {themeUrl}. Code: ({themeResponse.status_code})")
             else:
-                logger.error(f"Failed to fetch theme list. Code: {response.status_code}")
-        except Exception as e:
-            logger.error(f"Theme switch error: {str(e)}")
+                print(f"'{value}' does not exist.")
+        else:
+            print(f"Failed ({response.status_code})")
     else:
         customThemeName = value.replace(" (Custom)", "")
         customThemePath = os.path.join(customThemesDir, customThemeName)
         if os.path.isfile(customThemePath):
-            isValid, error = validateJsonFile(customThemePath)
-            if isValid:
-                try:
-                    with open(customThemePath, 'r') as customThemeFile:
-                        customThemeData = customThemeFile.read()
-                    with open(activeThemePath, 'w') as activeThemeFile:
-                        activeThemeFile.write(customThemeData)
-                    themeSwitched = True
-                    logger.info(f"Switched to custom theme: {customThemeName}")
-                except Exception as e:
-                    logger.error(f"Failed to load custom theme: {str(e)}")
-            else:
-                logger.error(f"Custom theme invalid: {error}")
+            with open(customThemePath, 'r') as customThemeFile:
+                customThemeData = customThemeFile.read()
+            with open(activeThemePath, 'w') as activeThemeFile:
+                activeThemeFile.write(customThemeData)
+            activeThemeData.reload()
         else:
-            logger.error(f"Custom theme file not found: {customThemePath}")
-    
-    if not themeSwitched:
-        logger.warning("Theme switch failed, using current theme")
-        return
-    
-    try:
-        app.destroy()
-        importlib.reload(customTheme)
-        newApp = App()
-        mainFunctions.registerApp(newApp)
-        newApp.mainloop()
-    except Exception as e:
-        logger.critical(f"Failed to restart app after theme switch: {str(e)}")
+            print(f"'{customThemePath}' does not exist.")
 
-checkThemeUpdates()
-loadThemeFile()
-initializeImages()
+    app.destroy()
+
+    importlib.reload(customTheme)
+
+    newApp = App()
+    mainFunctions.registerApp(newApp)
+    newApp.mainloop()

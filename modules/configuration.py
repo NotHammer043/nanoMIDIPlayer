@@ -1,11 +1,9 @@
 import os
 import json
-import logging
+import platform
 import shutil
 import requests
 import sys
-
-logger = logging.getLogger(__name__)
 
 documentsDir = os.path.join(os.path.expanduser("~"), "Documents")
 baseDirectory = os.path.join(documentsDir, "nanoMIDIPlayer")
@@ -23,162 +21,189 @@ def resourcePath(relativePath):
 
 defaultConfigPath = resourcePath("assets/defaultConfig.json")
 
-def validateJsonFile(filepath):
-    try:
-        with open(filepath, 'r') as f:
-            content = f.read().strip()
-            if not content:
-                return False, "File is empty"
-            json.loads(content)
-            return True, None
-    except json.JSONDecodeError as e:
-        return False, f"Invalid JSON: {str(e)}"
-    except Exception as e:
-        return False, f"File error: {str(e)}"
-
-def createFallbackConfig():
-    try:
-        if os.path.exists(defaultConfigPath):
-            isValid, error = validateJsonFile(defaultConfigPath)
-            if isValid:
-                with open(defaultConfigPath, "r") as f:
-                    fallbackConfig = json.load(f)
-                logger.info("Loaded fallback from defaultConfig.json")
-            else:
-                logger.error(f"defaultConfig.json invalid: {error}")
-                fallbackConfig = {}
-        else:
-            logger.error("defaultConfig.json not found")
-            fallbackConfig = {}
+class SafeDict(dict):
+    def __init__(self, manager, data, path=""):
+        super().__init__(data)
+        self.manager = manager
+        self.path = path
         
-        with open(configPath, "w") as file:
-            json.dump(fallbackConfig, file, indent=2)
-        logger.info("Created fallback config")
-        return fallbackConfig
-        
-    except Exception as e:
-        logger.error(f"Failed to create fallback: {str(e)}")
-        
-        minimalConfig = {}
-        with open(configPath, "w") as file:
-            json.dump(minimalConfig, file, indent=2)
-        return minimalConfig
-
-def checkConfig():
-    global configData
+        for key, value in list(self.items()):
+            if isinstance(value, dict):
+                self[key] = SafeDict(self.manager, value, f"{self.path}.{key}" if self.path else key)
     
-    configValid = False
-    configData = {}
-    
-    if os.path.exists(configPath):
-        isValid, error = validateJsonFile(configPath)
-        if isValid:
-            try:
-                with open(configPath, "r") as config:
-                    configData = json.load(config)
-                if isinstance(configData, dict):
-                    configValid = True
-                    logger.info("Loaded existing config")
-                else:
-                    logger.error("Config is not a dictionary")
-            except Exception as e:
-                logger.error(f"Error loading config: {str(e)}")
-        else:
-            logger.warning(f"Config validation failed: {error}")
-    
-    if not configValid:
-        logger.warning("Using fallback config")
-        configData = createFallbackConfig()
-        return
-    
-    remoteConfigs = []
-    
-    url = "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/defaultConfig.json"
-    
-    try:
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            try:
-                apiConfig = response.json()
-                remoteConfigs.append(("api", apiConfig))
-                logger.info("Successfully fetched remote config")
-            except json.JSONDecodeError as e:
-                logger.error(f"Invalid JSON in remote config: {str(e)}")
-        else:
-            logger.warning(f"Failed to retrieve remote configuration. Code: {response.status_code}")
-    except requests.exceptions.Timeout:
-        logger.warning("Remote config fetch timeout")
-    except requests.exceptions.ConnectionError:
-        logger.warning("No internet connection for config update")
-    except Exception as e:
-        logger.error(f"Error fetching remote configuration: {str(e)}")
-    
-    if os.path.exists(defaultConfigPath):
-        isValid, error = validateJsonFile(defaultConfigPath)
-        if isValid:
-            try:
-                with open(defaultConfigPath, "r") as f:
-                    localDefaultConfig = json.load(f)
-                remoteConfigs.append(("local_default", localDefaultConfig))
-                logger.info("Loaded defaultConfig.json")
-            except Exception as e:
-                logger.error(f"Error loading defaultConfig.json: {str(e)}")
-        else:
-            logger.error(f"defaultConfig.json invalid: {error}")
-    
-    if not remoteConfigs:
-        logger.warning("No valid config sources available")
-        return
-    
-    try:
-        updated = False
-        addedKeys = []
-        
-        allKeys = set()
-        for sourceName, sourceConfig in remoteConfigs:
-            if isinstance(sourceConfig, dict):
-                for key in sourceConfig.keys():
-                    allKeys.add(key)
-        
-        backupMade = False
-        backupPath = configPath + ".backup"
-        
-        for key in allKeys:
-            if key not in configData:
-                for sourceName, sourceConfig in remoteConfigs:
-                    if key in sourceConfig and isinstance(sourceConfig, dict):
-                        if not backupMade:
-                            try:
-                                shutil.copy2(configPath, backupPath)
-                                logger.info(f"Created config backup: {backupPath}")
-                                backupMade = True
-                            except Exception as e:
-                                logger.error(f"Failed to create backup: {str(e)}")
-                        
-                        configData[key] = sourceConfig[key]
-                        updated = True
-                        addedKeys.append((key, sourceName))
-                        logger.info(f"Added missing key '{key}' from {sourceName}")
+    def __getitem__(self, key):
+        try:
+            value = super().__getitem__(key)
+            if isinstance(value, dict) and not isinstance(value, SafeDict):
+                value = SafeDict(self.manager, value, f"{self.path}.{key}" if self.path else key)
+                super().__setitem__(key, value)
+            return value
+        except KeyError:
+            defaultConfig = self.manager.getDefaultConfig()
+            
+            currentDefault = defaultConfig
+            if self.path:
+                for part in self.path.split("."):
+                    if part in currentDefault and isinstance(currentDefault[part], dict):
+                        currentDefault = currentDefault[part]
+                    else:
+                        currentDefault = {}
                         break
+            
+            if key in currentDefault:
+                default_value = currentDefault[key]
+            else:
+                default_value = None
+            
+            if isinstance(default_value, dict):
+                default_value = SafeDict(self.manager, default_value, f"{self.path}.{key}" if self.path else key)
+            
+            super().__setitem__(key, default_value)
+            
+            self.manager.saveConfig()
+            
+            return default_value
+    
+    def __setitem__(self, key, value):
+        if isinstance(value, dict) and not isinstance(value, SafeDict):
+            value = SafeDict(self.manager, value, f"{self.path}.{key}" if self.path else key)
+        super().__setitem__(key, value)
+        self.manager.saveConfig()
+    
+    def update(self, other_dict):
+        for key, value in other_dict.items():
+            self[key] = value
+        self.manager.saveConfig()
+    
+    def to_dict(self):
+        result = {}
+        for key, value in self.items():
+            if isinstance(value, SafeDict):
+                result[key] = value.to_dict()
+            else:
+                result[key] = value
+        return result
+
+class ConfigManager:
+    def __init__(self):
+        self.configPath = configPath
+        self.defaultConfigPath = defaultConfigPath
+        self.remoteConfigUrl = "https://raw.githubusercontent.com/NotHammer043/nanoMIDIPlayer/refs/heads/main/api/defaultConfig.json"
+        
+        self._configData = SafeDict(self, {})
+        self.loadConfig()
+        self.validateConfig()
+        self.checkRemoteUpdates()
+    
+    def loadConfig(self):
+        if not os.path.exists(self.configPath):
+            self.copyDefaultConfig()
+            return
+        
+        with open(self.configPath, "r") as config:
+            try:
+                data = json.load(config)
+                self._configData.update(data)
+            except json.JSONDecodeError:
+                self.repairCorruptedConfig()
+    
+    def copyDefaultConfig(self):
+        if os.path.exists(self.defaultConfigPath):
+            with open(self.defaultConfigPath, "r") as f:
+                data = json.load(f)
+                self._configData.update(data)
+            self.saveConfig()
+        else:
+            self._configData = SafeDict(self, {})
+            self.saveConfig()
+    
+    def repairCorruptedConfig(self):
+        if os.path.exists(self.defaultConfigPath):
+            with open(self.defaultConfigPath, "r") as f:
+                data = json.load(f)
+                self._configData = SafeDict(self, data)
+            self.saveConfig()
+        else:
+            self._configData = SafeDict(self, {})
+            self.saveConfig()
+    
+    def getDefaultConfig(self):
+        localDefault = {}
+        if os.path.exists(self.defaultConfigPath):
+            with open(self.defaultConfigPath, "r") as f:
+                localDefault = json.load(f)
+        
+        remoteDefault = {}
+        try:
+            response = requests.get(self.remoteConfigUrl, timeout=5)
+            if response.status_code == 200:
+                remoteDefault = response.json()
+        except:
+            pass
+        
+        return remoteDefault or localDefault
+    
+    def validateConfig(self):
+        defaultConfig = self.getDefaultConfig()
+        updated = False
+        
+        def deepMerge(target, source, path=""):
+            nonlocal updated
+            for key, value in source.items():
+                if key not in target:
+                    target[key] = value
+                    updated = True
+                elif isinstance(value, dict) and isinstance(target.get(key), dict):
+                    deepMerge(target[key], value, f"{path}.{key}" if path else key)
+        
+        deepMerge(self._configData, defaultConfig)
         
         if updated:
-            try:
-                with open(configPath, "w") as file:
-                    json.dump(configData, file, indent=2)
-                logger.info(f"Updated Config with missing keys")
-                if addedKeys:
-                    logger.info(f"Added new keys: {addedKeys}")
-            except Exception as e:
-                logger.error(f"Failed to write updated config: {str(e)}")
-                
-                if backupMade:
-                    try:
-                        shutil.copy2(backupPath, configPath)
-                        logger.info("Restored config from backup")
-                    except Exception as e2:
-                        logger.error(f"Failed to restore from backup: {e2}")
-        else:
-            logger.info("Config Up to Date - No missing keys found")
-            
-    except Exception as e:
-        logger.error(f"Config update failed: {str(e)}")
+            self.saveConfig()
+    
+    def checkRemoteUpdates(self):
+        try:
+            response = requests.get(self.remoteConfigUrl, timeout=5)
+            if response.status_code == 200:
+                remoteConfig = response.json()
+                self.validateAgainstRemote(remoteConfig)
+        except:
+            pass
+    
+    def validateAgainstRemote(self, remoteConfig):
+        updated = False
+        
+        def deepCheck(target, source, path=""):
+            nonlocal updated
+            for key, value in source.items():
+                if key not in target:
+                    target[key] = value
+                    updated = True
+                elif isinstance(value, dict) and isinstance(target.get(key), dict):
+                    deepCheck(target[key], value, f"{path}.{key}" if path else key)
+        
+        deepCheck(self._configData, remoteConfig)
+        
+        if updated:
+            self.saveConfig()
+    
+    def saveConfig(self):
+        with open(self.configPath, "w") as file:
+            json.dump(self._configData.to_dict(), file, indent=2)
+    
+    def __getitem__(self, key):
+        return self._configData[key]
+    
+    def __setitem__(self, key, value):
+        self._configData[key] = value
+    
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+    
+    def save(self):
+        self.saveConfig()
+
+configData = ConfigManager()

@@ -37,40 +37,35 @@ switchCustomHoldLengthvar.set("on" if configuration.configData.get('midiToQwerty
 def switchSustain():
     try:
         configuration.configData['midiToQwerty']['sustain'] = switchSustainvar.get() == "on"
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
     except Exception as e:
         logger.exception(f"switchSustain error: {e}")
 
 def switchNoDoubles():
     try:
         configuration.configData['midiToQwerty']['noDoubles'] = switchNoDoublesvar.get() == "on"
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
     except Exception as e:
         logger.exception(f"switchNoDoubles error: {e}")
 
 def switchVelocity():
     try:
         configuration.configData['midiToQwerty']['velocity'] = switchVelocityvar.get() == "on"
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
     except Exception as e:
         logger.exception(f"switchVelocity error: {e}")
 
 def switch88Keys():
     try:
         configuration.configData['midiToQwerty']['88Keys'] = switch88Keysvar.get() == "on"
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
     except Exception as e:
         logger.exception(f"switch88Keys error: {e}")
 
 def switchCustomHoldLength():
     try:
         configuration.configData['midiToQwerty']['customHoldLength']['enabled'] = switchCustomHoldLengthvar.get() == "on"
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
         customHoldLengthStatus()
     except Exception as e:
         logger.exception(f"switchCustomHoldLength error: {e}")
@@ -92,8 +87,7 @@ def customHoldLengthStatus():
 def onModuleSelect(value):
     try:
         configuration.configData["midiToQwerty"]["inputModule"] = value
-        with open(configuration.configPath, 'w') as config_file:
-            json.dump(configuration.configData, config_file, indent=2)
+        configuration.configData.save()
     except Exception as e:
         logger.exception(f"onModuleSelect error: {e}")
 
