@@ -20,7 +20,7 @@ python -m pip install --upgrade pip pyinstaller
 pip install -r requirements.txt
 
 echo =^> Running PyInstaller to create .exe package...
-pyinstaller --onefile --noconsole --noconfirm ^
+pyinstaller --onefile --noconfirm ^
     --add-data="assets;assets" ^
     --paths="." ^
     --name="bootstrapper" ^
