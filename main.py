@@ -25,7 +25,7 @@ from modules import configuration
 from modules import updater
 from modules import telemetry
 
-appVersion = "v11.69.67"
+appVersion = "v11.69.679"
 osName = platform.system()
 
 if osName == "Darwin":
