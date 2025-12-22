@@ -21,7 +21,10 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 **Screenshots / Video**
-If applicable, add screenshots or a short video to help explain your problem.
+If possible, add screenshots or a short video to help explain your problem.
+
+**Log File**
+If possible, attach your latest `~/Documents/nanoMIDIPlayer/logs/nanoMIDIPlayer_{date}.log` file
 
 **Operating System**
  - OS: `[e.g. Windows, MacOS, Linux]`
