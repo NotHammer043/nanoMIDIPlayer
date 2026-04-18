@@ -100,6 +100,10 @@ paused = False
 playThread = None
 playbackSpeed = 1.0
 sustainActive = False
+heldNoteCount = 0
+
+def getPianoFingerLimit():
+    return int(configuration.configData.get("midiPlayer", {}).get("fingerLimit", 11))
 
 def findVelocityKey(velocity):
     velocityMap = configuration.configData["midiPlayer"]["pianoMap"]["velocityMap"]
@@ -118,9 +122,19 @@ def findVelocityKey(velocity):
     return velocityMap[str(thresholds[index])]
 
 def pressAndMaybeRelease(key):
+    global heldNoteCount
+    limit = getPianoFingerLimit()
+    if limit <= 10 and heldNoteCount >= limit:
+        log(f"Finger limit ({limit}) reached, skipping note")
+        return
+    heldNoteCount += 1
     press(key)
     if configuration.configData["midiPlayer"]["customHoldLength"]["enabled"]:
-        t = threading.Timer(configuration.configData["midiPlayer"]["customHoldLength"]["noteLength"], lambda: release(key))
+        def _timerRelease():
+            global heldNoteCount
+            release(key)
+            heldNoteCount = max(0, heldNoteCount - 1)
+        t = threading.Timer(configuration.configData["midiPlayer"]["customHoldLength"]["noteLength"], _timerRelease)
         timerList.append(t)
         t.start()
 
@@ -181,6 +195,7 @@ def simulateKey(msgType, note, velocity):
             release("ctrl")
 
     elif msgType == "note_off":
+        global heldNoteCount
         if 36 <= note <= 96:
             if re.search("[!@$%^*(]", key):
                 release(letterNoteMap[str(note - 1)])
@@ -188,6 +203,7 @@ def simulateKey(msgType, note, velocity):
                 release(key.lower())
         else:
             release(key.lower())
+        heldNoteCount = max(0, heldNoteCount - 1)
 
 def parseMidi(message):
     global sustainActive
@@ -370,12 +386,13 @@ def changeSpeed(amount):
     log(f"Speed: {playbackSpeed * 100:.0f}%")
 
 def stopPlayback():
-    global closeThread, stopEvent, playThread, clockThreadRef, keyboardHandlers, timerList
+    global closeThread, stopEvent, playThread, clockThreadRef, keyboardHandlers, timerList, heldNoteCount
     if closeThread or stopEvent.is_set():
         return
     
     stopEvent.set()
     closeThread = True
+    heldNoteCount = 0
     for key in list(heldKeys):
         try:
             release(key)

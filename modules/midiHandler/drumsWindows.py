@@ -111,15 +111,30 @@ paused = False
 closeThread = False
 playbackSpeed = 1.0
 keyboardHandlers = []
+heldNoteCount = 0
+
+def getDrumsFingerLimit():
+    return int(configuration.configData.get("drumsMacro", {}).get("fingerLimit", 11))
 
 def pressAndMaybeRelease(key):
+    global heldNoteCount
+    limit = getDrumsFingerLimit()
+    if limit <= 10 and heldNoteCount >= limit:
+        log(f"Finger limit ({limit}) reached, skipping drum hit")
+        return
+    heldNoteCount += 1
     press(key)
     if configuration.configData["drumsMacro"]["customHoldLength"]["enabled"]:
-        t = threading.Timer(configuration.configData["drumsMacro"]["customHoldLength"]["noteLength"], lambda: release(key))
+        def _timerRelease():
+            global heldNoteCount
+            release(key)
+            heldNoteCount = max(0, heldNoteCount - 1)
+        t = threading.Timer(configuration.configData["drumsMacro"]["customHoldLength"]["noteLength"], _timerRelease)
         timerList.append(t)
         t.start()
 
 def parseMidi(message):
+    global heldNoteCount
     if message.type == 'note_on' and message.velocity > 0:
         key = drumsMap.get(message.note)
         if key is not None:
@@ -128,6 +143,7 @@ def parseMidi(message):
         key = drumsMap.get(message.note)
         if key is not None:
             release(key)
+            heldNoteCount = max(0, heldNoteCount - 1)
 
 def playMidiOnce(filePath):
     mid = mido.MidiFile(filePath, clip=True)
@@ -225,9 +241,10 @@ def changeSpeed(amount):
     log(f"Speed: {playbackSpeed * 100:.0f}%")
 
 def stopPlayback():
-    global closeThread, stopEvent, playThread, clockThreadRef, timerList, keyboardHandlers
+    global closeThread, stopEvent, playThread, clockThreadRef, timerList, keyboardHandlers, heldNoteCount
     stopEvent.set()
     closeThread = True
+    heldNoteCount = 0
     for key in list(heldKeys):
         try:
             release(key)
