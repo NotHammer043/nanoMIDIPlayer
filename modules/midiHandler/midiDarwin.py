@@ -279,6 +279,9 @@ def playMidiOnce(midiFile):
             continue
         
         if hasattr(msg, "note"):
+            _noteOffset = configuration.configData["midiPlayer"].get("pitchOffset", 0) + configuration.configData["midiPlayer"].get("transposeOffset", 0)
+            if _noteOffset != 0:
+                msg.note += _noteOffset
             if msg.type == "note_on" and msg.velocity > 0:
                 if configuration.configData["midiPlayer"]["randomFail"]["enabled"] and random.random() < configuration.configData["midiPlayer"]["randomFail"]["transpose"] / 100:
                     delta = random.randint(-12, 12)

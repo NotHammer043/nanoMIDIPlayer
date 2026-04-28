@@ -424,6 +424,35 @@ def decreaseSpeed():
     except Exception as e:
         logger.exception(f"decreaseSpeed error: {e}")
 
+PITCH_OFFSETS = {
+    "Lowest":  -24,
+    "Low":     -12,
+    "Middle":    0,
+    "High":     12,
+    "Highest":  24,
+}
+
+KEY_OFFSETS = {
+    "C": 0, "C#": 1, "D": 2, "D#": 3, "E": 4, "F": 5,
+    "F#": 6, "G": 7, "G#": 8, "A": 9, "A#": 10, "B": 11,
+}
+
+def changePitch(value):
+    logger.info(f"changePitch called: {value}")
+    try:
+        configuration.configData["midiPlayer"]["pitchOffset"] = PITCH_OFFSETS.get(value, 0)
+        configuration.configData.save()
+    except Exception as e:
+        logger.exception(f"changePitch error: {e}")
+
+def changeTranspose(value):
+    logger.info(f"changeTranspose called: {value}")
+    try:
+        configuration.configData["midiPlayer"]["transposeOffset"] = KEY_OFFSETS.get(value, 0)
+        configuration.configData.save()
+    except Exception as e:
+        logger.exception(f"changeTranspose error: {e}")
+
 def increaseSpeed():
     logger.info("increaseSpeed called")
     try:

@@ -139,6 +139,7 @@ def pressAndMaybeRelease(key):
         t.start()
 
 def simulateKey(msgType, note, velocity):
+    note = note + configuration.configData["midiPlayer"].get("pitchOffset", 0) + configuration.configData["midiPlayer"].get("transposeOffset", 0)
     allow88 = configuration.configData["midiPlayer"]["88Keys"]
 
     letterNoteMap = configuration.configData["midiPlayer"]["pianoMap"]["61keyMap"]

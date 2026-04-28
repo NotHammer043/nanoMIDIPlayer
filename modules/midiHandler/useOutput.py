@@ -46,7 +46,8 @@ def parseMidi(message):
             return
 
     if message.type in ("note_on", "note_off"):
-        note = message.note
+        noteOffset = configuration.configData["midiPlayer"].get("pitchOffset", 0) + configuration.configData["midiPlayer"].get("transposeOffset", 0)
+        note = message.note + noteOffset
         if not noteAllowed(note):
             log(f"out of range: {note}")
             return
