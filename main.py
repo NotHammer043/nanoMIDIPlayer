@@ -120,7 +120,7 @@ class App(ctk.CTk):
 
         # WINDOW PROPERTIES
         self.title("nanoMIDIPlayer")
-        self.geometry("600x450")
+        self.geometry("600x560")
         self.resizable(False, False)
 
         if osName == "Windows":

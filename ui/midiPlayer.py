@@ -260,6 +260,62 @@ class MidiPlayerTab(ctk.CTkFrame):
         self.__class__.use88KeysToggle = self.use88KeysToggle
         ToolTip.CreateToolTip(self.use88KeysToggle, text = 'Simulate LowNote and HighNote by "CTRL"\nOnly works on supported games.')
 
+        # PITCH & KEY TRANSPOSE DROPDOWNS
+        _initPitchOffset = configuration.configData.get("midiPlayer", {}).get("pitchOffset", 0)
+        _pitchOffsetMap = {-24: "Lowest", -12: "Low", 0: "Middle", 12: "High", 24: "Highest"}
+        _initPitchLabel = _pitchOffsetMap.get(_initPitchOffset, "Middle")
+
+        _initTransposeOffset = configuration.configData.get("midiPlayer", {}).get("transposeOffset", 0)
+        _keyNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        _initKeyLabel = _keyNames[_initTransposeOffset % 12] if 0 <= _initTransposeOffset <= 11 else "C"
+
+        self.pitchLabel = ctk.CTkLabel(
+            self.midiFrame, text="Pitch", fg_color="transparent", font=customTheme.globalFont14,
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"],
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.pitchLabel.grid(row=6, column=0, padx=(0, 210), pady=(10, 0))
+
+        self.pitchDropdown = ctk.CTkOptionMenu(
+            self.midiFrame, width=130, values=["Lowest", "Low", "Middle", "High", "Highest"],
+            font=customTheme.globalFont14, dropdown_font=customTheme.globalFont14,
+            command=midiPlayerFunctions.changePitch,
+            fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionBackColor"],
+            dropdown_fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownBackground"],
+            button_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownButtonColor"],
+            button_hover_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownButtonHoverColor"],
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"],
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.pitchDropdown.set(_initPitchLabel)
+        self.pitchDropdown.grid(row=7, column=0, padx=(0, 190), pady=(4, 10))
+        self.__class__.pitchDropdown = self.pitchDropdown
+        ToolTip.CreateToolTip(self.pitchDropdown, text='Shift playback pitch by octaves\nLowest=-2oct  Low=-1oct  Middle=default\nHigh=+1oct  Highest=+2oct')
+
+        self.keyTransposeLabel = ctk.CTkLabel(
+            self.midiFrame, text="Key", fg_color="transparent", font=customTheme.globalFont14,
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"],
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.keyTransposeLabel.grid(row=6, column=0, padx=(220, 0), pady=(10, 0))
+
+        self.keyTransposeDropdown = ctk.CTkOptionMenu(
+            self.midiFrame, width=80,
+            values=["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
+            font=customTheme.globalFont14, dropdown_font=customTheme.globalFont14,
+            command=midiPlayerFunctions.changeTranspose,
+            fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionBackColor"],
+            dropdown_fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownBackground"],
+            button_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownButtonColor"],
+            button_hover_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownButtonHoverColor"],
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"],
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.keyTransposeDropdown.set(_initKeyLabel)
+        self.keyTransposeDropdown.grid(row=7, column=0, padx=(230, 0), pady=(4, 10))
+        self.__class__.keyTransposeDropdown = self.keyTransposeDropdown
+        ToolTip.CreateToolTip(self.keyTransposeDropdown, text='Transpose playback by semitones\nC = no transpose (default)')
+
         # PLAYBACK BUTTONS
         self.playButton = ctk.CTkButton(
             self.midiFrame, text="Play", fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["PlayColor"], 
@@ -292,6 +348,51 @@ class MidiPlayerTab(ctk.CTkFrame):
         )
         self.timelineIndicator.grid(row=10, column=0, padx=(0, 50), pady=(0, 0), sticky="e")
         self.__class__.timelineIndicator = self.timelineIndicator
+
+        # FINGER LIMIT
+        _pianoInitLimit = configuration.configData.get("midiPlayer", {}).get("fingerLimit", 11)
+        _pianoInitDisplay = "∞" if _pianoInitLimit > 10 else str(_pianoInitLimit)
+
+        self.fingerLimitLabel = ctk.CTkLabel(
+            self.midiFrame, text="Fingers", fg_color="transparent", font=customTheme.globalFont14,
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"],
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.fingerLimitLabel.grid(row=8, column=0, padx=(0, 290), pady=(5, 0))
+
+        self.fingerLimitSlider = ctk.CTkSlider(
+            self.midiFrame, from_=1, to=11, number_of_steps=10, width=190,
+            command=lambda value: settingsFunctions.changePianoFingerLimit(value),
+            fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderBackColor"],
+            progress_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderFillColor"],
+            button_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderCircleColor"],
+            button_hover_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderCircleHoverColor"]
+        )
+        self.fingerLimitSlider.grid(row=8, column=0, padx=(0, 50), pady=(5, 0))
+        self.fingerLimitSlider.set(_pianoInitLimit)
+        self.__class__.fingerLimitSlider = self.fingerLimitSlider
+        ToolTip.CreateToolTip(self.fingerLimitSlider, text='Max simultaneous keys (1-10)\nSlide past 10 for No Limit (∞)')
+
+        self.fingerLimitValueLabel = ctk.CTkLabel(
+            self.midiFrame, text=_pianoInitDisplay, width=50, font=customTheme.globalFont14,
+            fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SpeedValueBoxBackColor"],
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"],
+            corner_radius=6
+        )
+        self.fingerLimitValueLabel.grid(row=8, column=0, padx=(200, 0), pady=(5, 0))
+        self.__class__.fingerLimitValueLabel = self.fingerLimitValueLabel
+
+        self.resetFingerLimitButton = ctk.CTkButton(
+            self.midiFrame, image=customTheme.resetImageCTk, text="", width=30,
+            command=lambda: (self.fingerLimitSlider.set(11), settingsFunctions.changePianoFingerLimit(11)),
+            font=customTheme.globalFont14,
+            fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["ButtonColor"],
+            hover_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["ButtonHoverColor"],
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"],
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.resetFingerLimitButton.grid(row=8, column=0, padx=(290, 0), pady=(5, 0))
+        ToolTip.CreateToolTip(self.resetFingerLimitButton, text='Reset Finger Limit to ∞')
 
         # SPEED CONTROL
         self.speedTextTitle = ctk.CTkLabel(

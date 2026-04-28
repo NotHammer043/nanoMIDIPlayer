@@ -16,6 +16,7 @@
       "enabled": false,
       "noteLength": 0.1
     },
+    "fingerLimit": 11,
     "randomFail": {
       "enabled": false,
       "speed": 5.0,
@@ -165,6 +166,7 @@
       "enabled": false,
       "noteLength": 0.1
     },
+    "fingerLimit": 11,
     "randomFail": {
       "enabled": false,
       "speed": 5.0

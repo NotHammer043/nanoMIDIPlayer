@@ -364,6 +364,28 @@ def changeDrumsDecreaseSize(value):
     except Exception as e:
         logger.exception("Error in changeDrumsDecreaseSize")
 
+def changePianoFingerLimit(value):
+    try:
+        val = int(round(float(value)))
+        configuration.configData["midiPlayer"]["fingerLimit"] = val
+        configuration.configData.save()
+        display = "∞" if val > 10 else str(val)
+        MidiPlayerTab.fingerLimitValueLabel.configure(text=display)
+        logger.debug("PianoFingerLimit changed to %s", val)
+    except Exception as e:
+        logger.exception("Error in changePianoFingerLimit")
+
+def changeDrumsFingerLimit(value):
+    try:
+        val = int(round(float(value)))
+        configuration.configData["drumsMacro"]["fingerLimit"] = val
+        configuration.configData.save()
+        display = "∞" if val > 10 else str(val)
+        DrumsMacroTab.fingerLimitValueLabel.configure(text=display)
+        logger.debug("DrumsFingerLimit changed to %s", val)
+    except Exception as e:
+        logger.exception("Error in changeDrumsFingerLimit")
+
 def changeMidiToQWERTYSustainCutoff(value):
     try:
         val = float(value)

@@ -209,6 +209,51 @@ class DrumsMacroTab(ctk.CTkFrame):
         self.timelineIndicator.grid(row=10, column=0, padx=(0, 50), pady=(0, 0), sticky="e")
         self.__class__.timelineIndicator = self.timelineIndicator
 
+        # FINGER LIMIT
+        _drumsInitLimit = configuration.configData.get("drumsMacro", {}).get("fingerLimit", 11)
+        _drumsInitDisplay = "∞" if _drumsInitLimit > 10 else str(_drumsInitLimit)
+
+        self.fingerLimitLabel = ctk.CTkLabel(
+            self.mainFrame, text="Fingers", fg_color="transparent", font=customTheme.globalFont14,
+            text_color=customTheme.activeThemeData["Theme"]["DrumsMacro"]["TextColor"],
+            text_color_disabled=customTheme.activeThemeData["Theme"]["DrumsMacro"]["TextColorDisabled"]
+        )
+        self.fingerLimitLabel.grid(row=8, column=0, padx=(0, 290), pady=(5, 0))
+
+        self.fingerLimitSlider = ctk.CTkSlider(
+            self.mainFrame, from_=1, to=11, number_of_steps=10,
+            command=lambda value: settingsFunctions.changeDrumsFingerLimit(value),
+            fg_color=customTheme.activeThemeData["Theme"]["DrumsMacro"]["SpeedSliderBackColor"],
+            progress_color=customTheme.activeThemeData["Theme"]["DrumsMacro"]["SpeedSliderFillColor"],
+            button_color=customTheme.activeThemeData["Theme"]["DrumsMacro"]["SpeedSliderCircleColor"],
+            button_hover_color=customTheme.activeThemeData["Theme"]["DrumsMacro"]["SpeedSliderCircleHoverColor"]
+        )
+        self.fingerLimitSlider.grid(row=8, column=0, padx=(0, 50), pady=(5, 0))
+        self.fingerLimitSlider.set(_drumsInitLimit)
+        self.__class__.fingerLimitSlider = self.fingerLimitSlider
+        ToolTip.CreateToolTip(self.fingerLimitSlider, text='Max simultaneous keys (1-10)\nSlide past 10 for No Limit (∞)')
+
+        self.fingerLimitValueLabel = ctk.CTkLabel(
+            self.mainFrame, text=_drumsInitDisplay, width=50, font=customTheme.globalFont14,
+            fg_color=customTheme.activeThemeData["Theme"]["DrumsMacro"]["SpeedValueBoxBackColor"],
+            text_color=customTheme.activeThemeData["Theme"]["DrumsMacro"]["TextColor"],
+            corner_radius=6
+        )
+        self.fingerLimitValueLabel.grid(row=8, column=0, padx=(200, 0), pady=(5, 0))
+        self.__class__.fingerLimitValueLabel = self.fingerLimitValueLabel
+
+        self.resetFingerLimitButton = ctk.CTkButton(
+            self.mainFrame, image=customTheme.resetImageCTk, text="", width=30,
+            command=lambda: (self.fingerLimitSlider.set(11), settingsFunctions.changeDrumsFingerLimit(11)),
+            font=customTheme.globalFont14,
+            fg_color=customTheme.activeThemeData["Theme"]["DrumsMacro"]["ButtonColor"],
+            hover_color=customTheme.activeThemeData["Theme"]["DrumsMacro"]["ButtonHoverColor"],
+            text_color=customTheme.activeThemeData["Theme"]["DrumsMacro"]["TextColor"],
+            text_color_disabled=customTheme.activeThemeData["Theme"]["DrumsMacro"]["TextColorDisabled"]
+        )
+        self.resetFingerLimitButton.grid(row=8, column=0, padx=(290, 0), pady=(5, 0))
+        ToolTip.CreateToolTip(self.resetFingerLimitButton, text='Reset Finger Limit to ∞')
+
         # SPEED CONTROL
         self.speedLabel = ctk.CTkLabel(
             self.mainFrame, text="Speed", fg_color="transparent", 
