@@ -1,8 +1,14 @@
 name: Build Cross-Platform Artifacts
 
+run-name: ${{ github.event.inputs.run_name || 'Build Cross-Platform Artifacts' }}
+
 on:
   workflow_dispatch:
     inputs:
+      run_name:
+        description: "Workflow Run Name"
+        required: false
+        default: "Build Cross-Platform Artifacts"
       target_branch:
         description: "Push Branch"
         required: true
