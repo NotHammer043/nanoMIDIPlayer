@@ -1,12 +1,14 @@
 name: Build Cross-Platform Artifacts
 
+run-name: ${{ github.event.inputs.run_name || 'Build Cross-Platform Artifacts' }}
+
 on:
   workflow_dispatch:
     inputs:
-      target_branch:
-        description: "Push Branch"
-        required: true
-        default: "beta"
+      run_name:
+        description: "Workflow Run Name"
+        required: false
+        default: "Build Cross-Platform Artifacts"
   pull_request:
 
 permissions:
@@ -114,14 +116,15 @@ jobs:
         with:
           name: windows-exe
           path: dist/*.exe
-          
+
   build-bootstrapper-win:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.event.inputs.target_branch }}
+          ref: ${{ github.ref_name }}
 
       - name: Build Windows Bootstrapper
         run: ./scripts/build-bootstrapper-win.bat
@@ -137,10 +140,11 @@ jobs:
 
           git add api/bootstrapper.exe
           git commit -m "Update bootstrapper.exe from CI build" || echo "No changes to commit"
-          git push origin ${{ github.event.inputs.target_branch }}
-        
+          git push origin HEAD:${{ github.ref_name }}
+
   summary:
     needs: [build-macos-intel, build-macos-arm, build-linux, build-windows, build-bootstrapper-win]
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Download all build artifacts
