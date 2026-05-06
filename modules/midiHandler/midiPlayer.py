@@ -288,7 +288,7 @@ class MidiPlayerTab(ctk.CTkFrame):
             text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
         )
         self.pitchDropdown.set(_initPitchLabel)
-        self.pitchDropdown.grid(row=7, column=0, padx=(0, 190), pady=(4, 10))
+        self.pitchDropdown.grid(row=7, column=0, padx=(0, 60), pady=(4, 10))
         self.__class__.pitchDropdown = self.pitchDropdown
         ToolTip.CreateToolTip(self.pitchDropdown, text='Shift playback pitch by octaves\nLowest=-2oct  Low=-1oct  Middle=default\nHigh=+1oct  Highest=+2oct')
 
@@ -297,7 +297,7 @@ class MidiPlayerTab(ctk.CTkFrame):
             text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"],
             text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
         )
-        self.keyTransposeLabel.grid(row=6, column=0, padx=(220, 0), pady=(10, 0))
+        self.keyTransposeLabel.grid(row=6, column=0, padx=(130, 0), pady=(10, 0))
 
         self.keyTransposeDropdown = ctk.CTkOptionMenu(
             self.midiFrame, width=80,
