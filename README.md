@@ -6,7 +6,7 @@
 ![GitHub license](https://img.shields.io/github/license/NotHammer043/nanoMIDIPlayer?style=for-the-badge)
 [![Download nanoMIDIPlayer](https://img.shields.io/github/downloads/NotHammer043/nanoMIDIPlayer/total?style=for-the-badge)](https://github.com/NotHammer043/nanoMIDIPlayer/releases)  
 
-[![Discord](https://us-east-1.tixte.net/uploads/nitrogift.discowd.com/mfmrte8il51.png)](https://nanomidi.net/discord)  [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/nanoMIDI) [![PayPal](https://us-east-1.tixte.net/uploads/nitrogift.discowd.com/paypalbutton.png)](https://paypal.me/nanoMIDI)  
+[![Discord](https://us-east-1.tixte.net/uploads/nitrogift.discowd.com/mfmrte8il51.png)](https://nanomidi.net/discord)  [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/nanoMIDI)  
 ---
 
 ## 🚀 Features  
@@ -143,6 +143,6 @@ nanoMIDIPlayer.exe --debug
 - **Star the repo** ⭐ on [GitHub](https://github.com/NotHammer043/nanoMIDIPlayer)  
 - **Report issues** 🛠️ via [GitHub Issues](https://github.com/NotHammer043/nanoMIDIPlayer/issues)  
 - **Contribute** 💻 via Pull Requests  
-- **Donate** via **[BuyMeACoffee <img width="16" height="16" alt="aZdziwkryKjF" src="https://github.com/user-attachments/assets/065003ea-0cfc-410a-b0f2-d11ce60426b2" />](https://buymeacoffee.com/nanomidi)** or **[PayPal <img width="16" height="16" alt="paypal" src="https://github.com/user-attachments/assets/15cf897f-90c6-4ca5-aa58-64004ab0c9ce" />](https://paypal.me/nanomidi)**
+- **Donate** via **[BuyMeACoffee <img width="16" height="16" alt="aZdziwkryKjF" src="https://github.com/user-attachments/assets/065003ea-0cfc-410a-b0f2-d11ce60426b2" />](https://buymeacoffee.com/nanomidi)**
 
 [![Star History Chart](https://api.star-history.com/svg?repos=NotHammer043/nanoMIDIPlayer&type=Date)](https://www.star-history.com/#NotHammer043/nanoMIDIPlayer&Date)  
