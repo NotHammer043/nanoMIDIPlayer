@@ -12,6 +12,7 @@
     "88Keys": true,
     "sustainCutoff": 63,
     "decreaseSize": 5.0,
+    "skipSeconds": 5.0,
     "customHoldLength": {
       "enabled": false,
       "noteLength": 0.1
@@ -344,7 +345,9 @@
     "pause": "f2",
     "stop": "f3",
     "speedup": "f4",
-    "slowdown": "f5"
+    "slowdown": "f5",
+    "skipback": "f6",
+    "skipforward": "f7"
   },
   "appUI": {
     "topmost": false,

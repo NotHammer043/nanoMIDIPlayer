@@ -136,7 +136,7 @@ class MidiPlayerTab(ctk.CTkFrame):
             text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
             text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
         )
-        self.pauseHotkeyLabel.grid(row=5, column=0, padx=(0, 300), pady=(2, 30), sticky="s")
+        self.pauseHotkeyLabel.grid(row=5, column=0, padx=(0, 300), pady=(2, 60), sticky="s")
 
         self.pauseHotkeyButton = ctk.CTkButton(
             self.midiFrame, text=configuration.configData["hotkeys"].get('pause', 'f2').upper(), width=70, command=mainFunctions.pauseHotkeyCommand, 
@@ -146,7 +146,7 @@ class MidiPlayerTab(ctk.CTkFrame):
             text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
             text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
         )
-        self.pauseHotkeyButton.grid(row=5, column=0, padx=(0, 165), pady=(0, 30), sticky="s")
+        self.pauseHotkeyButton.grid(row=5, column=0, padx=(0, 165), pady=(0, 60), sticky="s")
         self.__class__.pauseHotkeyButton = self.pauseHotkeyButton
         ToolTip.CreateToolTip(self.pauseHotkeyButton, text = 'Pause Playback Hotkey')
 
@@ -155,7 +155,7 @@ class MidiPlayerTab(ctk.CTkFrame):
             text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
             text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
         )
-        self.stopHotkeyLabel.grid(row=5, column=0, padx=(0, 300), pady=(0, 0), sticky="s")
+        self.stopHotkeyLabel.grid(row=5, column=0, padx=(0, 300), pady=(0, 30), sticky="s")
 
         self.stopHotkeyButton = ctk.CTkButton(
             self.midiFrame, text=configuration.configData["hotkeys"].get('stop', 'f3').upper(), width=70, command=mainFunctions.stopHotkeyCommand, 
@@ -165,7 +165,7 @@ class MidiPlayerTab(ctk.CTkFrame):
             text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
             text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
         )
-        self.stopHotkeyButton.grid(row=5, column=0, padx=(0, 165), pady=(0, 0), sticky="s")
+        self.stopHotkeyButton.grid(row=5, column=0, padx=(0, 165), pady=(0, 30), sticky="s")
         self.__class__.stopHotkeyButton = self.stopHotkeyButton
         ToolTip.CreateToolTip(self.stopHotkeyButton, text = 'Stop Playback Hotkey')
 
@@ -174,7 +174,7 @@ class MidiPlayerTab(ctk.CTkFrame):
             text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
             text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
         )
-        self.slowDownHotkeyLabel.grid(row=5, column=0, padx=(80, 0), pady=(0, 30), sticky="s")
+        self.slowDownHotkeyLabel.grid(row=5, column=0, padx=(80, 0), pady=(0, 60), sticky="s")
 
         self.speedUpHotkeyButton = ctk.CTkButton(
             self.midiFrame, text=configuration.configData["hotkeys"].get('speedup', 'f4').upper(), width=70, command=mainFunctions.speedUpHotkeyCommand, 
@@ -184,7 +184,7 @@ class MidiPlayerTab(ctk.CTkFrame):
             text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
             text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
         )
-        self.speedUpHotkeyButton.grid(row=5, column=0, padx=(250, 0), pady=(0, 30), sticky="s")
+        self.speedUpHotkeyButton.grid(row=5, column=0, padx=(250, 0), pady=(0, 60), sticky="s")
         self.__class__.speedUpHotkeyButton = self.speedUpHotkeyButton
         ToolTip.CreateToolTip(self.speedUpHotkeyButton, text = 'Speed-up Playback Hotkey')
 
@@ -193,7 +193,7 @@ class MidiPlayerTab(ctk.CTkFrame):
             text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
             text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
         )
-        self.speedUpHotkeyLabel.grid(row=5, column=0, padx=(80, 0), pady=(0, 0), sticky="s")
+        self.speedUpHotkeyLabel.grid(row=5, column=0, padx=(80, 0), pady=(0, 30), sticky="s")
 
         self.slowHotkeyButton = ctk.CTkButton(
             self.midiFrame, text=configuration.configData["hotkeys"].get('slowdown', 'f5').upper(), width=70, command=mainFunctions.slowHotkeyCommand, 
@@ -203,9 +203,47 @@ class MidiPlayerTab(ctk.CTkFrame):
             text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
             text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
         )
-        self.slowHotkeyButton.grid(row=5, column=0, padx=(250, 0), pady=(0, 0), sticky="s")
+        self.slowHotkeyButton.grid(row=5, column=0, padx=(250, 0), pady=(0, 30), sticky="s")
         self.__class__.slowHotkeyButton = self.slowHotkeyButton
         ToolTip.CreateToolTip(self.slowHotkeyButton, text = 'Slow-down Playback Hotkey')
+
+        self.skipBackHotkeyLabel = ctk.CTkLabel(
+            self.midiFrame, text=" Back:", fg_color="transparent", font=customTheme.globalFont14, 
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.skipBackHotkeyLabel.grid(row=5, column=0, padx=(0, 300), pady=(0, 0), sticky="s")
+
+        self.skipBackHotkeyButton = ctk.CTkButton(
+            self.midiFrame, text=configuration.configData["hotkeys"].get('skipback', 'f6').upper(), width=70, command=mainFunctions.skipBackHotkeyCommand, 
+            font=customTheme.globalFont14, 
+            fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorColor"], 
+            hover_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorHoverColor"], 
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.skipBackHotkeyButton.grid(row=5, column=0, padx=(0, 165), pady=(0, 0), sticky="s")
+        self.__class__.skipBackHotkeyButton = self.skipBackHotkeyButton
+        ToolTip.CreateToolTip(self.skipBackHotkeyButton, text = 'Skip Back Hotkey\nJumps back a few seconds')
+
+        self.skipForwardHotkeyLabel = ctk.CTkLabel(
+            self.midiFrame, text="  Forward:", fg_color="transparent", font=customTheme.globalFont14, 
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.skipForwardHotkeyLabel.grid(row=5, column=0, padx=(80, 0), pady=(0, 0), sticky="s")
+
+        self.skipForwardHotkeyButton = ctk.CTkButton(
+            self.midiFrame, text=configuration.configData["hotkeys"].get('skipforward', 'f7').upper(), width=70, command=mainFunctions.skipForwardHotkeyCommand, 
+            font=customTheme.globalFont14, 
+            fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorColor"], 
+            hover_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["HotkeySelectorHoverColor"], 
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"], 
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.skipForwardHotkeyButton.grid(row=5, column=0, padx=(250, 0), pady=(0, 0), sticky="s")
+        self.__class__.skipForwardHotkeyButton = self.skipForwardHotkeyButton
+        ToolTip.CreateToolTip(self.skipForwardHotkeyButton, text = 'Skip Forward Hotkey\nJumps ahead a few seconds')
         
         # TOGGLES
         self.sustainToggle = ctk.CTkSwitch(

@@ -866,6 +866,42 @@ class SettingsTab(ctk.CTkFrame):
         self.__class__.slowHotkeyButton = self.slowHotkeyButton
         ToolTip.CreateToolTip(self.slowHotkeyButton, text = 'Slow-down Playback Hotkey')
 
+        self.skipBackHotkeyLabel = ctk.CTkLabel(
+            self.mainScrollFrame, text="Skip Back", fg_color="transparent", 
+            font=customTheme.globalFont14, 
+            text_color=customTheme.activeThemeData["Theme"]["Settings"]["TextColor"]
+        )
+        self.skipBackHotkeyLabel.grid(row=23, column=0, padx=(19, 0), pady=(0, 0), sticky="w")
+
+        self.skipForwardHotkeyLabel = ctk.CTkLabel(
+            self.mainScrollFrame, text="Skip Fwd", fg_color="transparent", 
+            font=customTheme.globalFont14, 
+            text_color=customTheme.activeThemeData["Theme"]["Settings"]["TextColor"]
+        )
+        self.skipForwardHotkeyLabel.grid(row=23, column=0, padx=(101, 0), pady=(0, 0), sticky="w")
+
+        self.skipBackHotkeyButton = ctk.CTkButton(
+            self.mainScrollFrame, text=configuration.configData["hotkeys"].get('skipback', 'f6').upper(), width=70, 
+            command=mainFunctions.skipBackHotkeyCommand, font=customTheme.globalFont14, 
+            text_color=customTheme.activeThemeData["Theme"]["Settings"]["TextColor"], 
+            fg_color=customTheme.activeThemeData["Theme"]["Settings"]["HotkeySelectorColor"], 
+            hover_color=customTheme.activeThemeData["Theme"]["Settings"]["HotkeySelectorHoverColor"]
+        )
+        self.skipBackHotkeyButton.grid(row=24, column=0, padx=(15, 165), pady=(0, 10), sticky="w")
+        self.__class__.skipBackHotkeyButton = self.skipBackHotkeyButton
+        ToolTip.CreateToolTip(self.skipBackHotkeyButton, text = 'Skip Back Hotkey (MIDI Player)')
+
+        self.skipForwardHotkeyButton = ctk.CTkButton(
+            self.mainScrollFrame, text=configuration.configData["hotkeys"].get('skipforward', 'f7').upper(), width=70, 
+            command=mainFunctions.skipForwardHotkeyCommand, font=customTheme.globalFont14, 
+            text_color=customTheme.activeThemeData["Theme"]["Settings"]["TextColor"], 
+            fg_color=customTheme.activeThemeData["Theme"]["Settings"]["HotkeySelectorColor"], 
+            hover_color=customTheme.activeThemeData["Theme"]["Settings"]["HotkeySelectorHoverColor"]
+        )
+        self.skipForwardHotkeyButton.grid(row=24, column=0, padx=(95, 165), pady=(0, 10), sticky="w")
+        self.__class__.skipForwardHotkeyButton = self.skipForwardHotkeyButton
+        ToolTip.CreateToolTip(self.skipForwardHotkeyButton, text = 'Skip Forward Hotkey (MIDI Player)')
+
         settingsFunctions.midiCustomHoldLengthStatus()
         settingsFunctions.midiRandomFailStatus()
 

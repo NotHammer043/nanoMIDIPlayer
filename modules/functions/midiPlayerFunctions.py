@@ -213,6 +213,8 @@ def bindControls():
         stopKey = configuration.configData["hotkeys"].get("stop", "F3").upper()
         speedUpKey = configuration.configData["hotkeys"].get("speedup", "F4").upper()
         slowDownKey = configuration.configData["hotkeys"].get("slowdown", "F5").upper()
+        skipBackKey = configuration.configData["hotkeys"].get("skipback", "F6").upper()
+        skipForwardKey = configuration.configData["hotkeys"].get("skipforward", "F7").upper()
 
         if osName == "Windows":
             unbindControls()
@@ -221,6 +223,8 @@ def bindControls():
             midiHandler.keyboardHandlers.append(keyboard.on_press_key(stopKey.lower(), lambda e: stopPlayback()))
             midiHandler.keyboardHandlers.append(keyboard.on_press_key(speedUpKey.lower(), lambda e: decreaseSpeed()))
             midiHandler.keyboardHandlers.append(keyboard.on_press_key(slowDownKey.lower(), lambda e: increaseSpeed()))
+            midiHandler.keyboardHandlers.append(keyboard.on_press_key(skipBackKey.lower(), lambda e: skipBack()))
+            midiHandler.keyboardHandlers.append(keyboard.on_press_key(skipForwardKey.lower(), lambda e: skipForward()))
         else:
             from modules.functions import mainFunctions
             mainFunctions.activeHotkeys.clear()
@@ -229,7 +233,9 @@ def bindControls():
                 pauseKey: pausePlayback,
                 stopKey: stopPlayback,
                 speedUpKey: decreaseSpeed,
-                slowDownKey: increaseSpeed
+                slowDownKey: increaseSpeed,
+                skipBackKey: skipBack,
+                skipForwardKey: skipForward
             })
             mainFunctions.startGlobalListener()
     except Exception as e:
@@ -516,6 +522,22 @@ def seekTo(seconds):
             MidiPlayerTab.timelineIndicator.configure(text=f"{midiHandler.formatTime(seconds)} / {midiHandler.formatTime(total)}")
     except Exception as e:
         logger.exception(f"seekTo error: {e}")
+
+def skipBy(seconds):
+    try:
+        currentSongLength()
+        start = activeHandler().getPosition() if app.isRunning else pendingStart
+        seekTo(start + seconds)
+    except Exception as e:
+        logger.exception(f"skipBy error: {e}")
+
+def skipBack():
+    logger.info("skipBack called")
+    skipBy(-configuration.configData["midiPlayer"].get("skipSeconds", 5.0))
+
+def skipForward():
+    logger.info("skipForward called")
+    skipBy(configuration.configData["midiPlayer"].get("skipSeconds", 5.0))
 
 def increaseSpeed():
     logger.info("increaseSpeed called")

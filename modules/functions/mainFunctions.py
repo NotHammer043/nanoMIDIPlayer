@@ -315,7 +315,9 @@ def setHotkey(keyType):
         'pause': [MidiPlayerTab.pauseHotkeyButton, DrumsMacroTab.pauseHotkeyButton, SettingsTab.pauseHotkeyButton],
         'stop': [MidiPlayerTab.stopHotkeyButton, DrumsMacroTab.stopHotkeyButton, SettingsTab.stopHotkeyButton],
         'speedup': [MidiPlayerTab.speedUpHotkeyButton, DrumsMacroTab.speedUpHotkeyButton, SettingsTab.speedUpHotkeyButton],
-        'slowdown': [MidiPlayerTab.slowHotkeyButton, DrumsMacroTab.slowHotkeyButton, SettingsTab.slowHotkeyButton]
+        'slowdown': [MidiPlayerTab.slowHotkeyButton, DrumsMacroTab.slowHotkeyButton, SettingsTab.slowHotkeyButton],
+        'skipback': [MidiPlayerTab.skipBackHotkeyButton, SettingsTab.skipBackHotkeyButton],
+        'skipforward': [MidiPlayerTab.skipForwardHotkeyButton, SettingsTab.skipForwardHotkeyButton]
     }
 
     oldHotkey = configuration.configData["hotkeys"][keyType]
@@ -462,3 +464,11 @@ def speedUpHotkeyCommand():
 def slowHotkeyCommand():
     logger.debug("slowHotkeyCommand")
     setHotkey('slowdown')
+
+def skipBackHotkeyCommand():
+    logger.debug("skipBackHotkeyCommand")
+    setHotkey('skipback')
+
+def skipForwardHotkeyCommand():
+    logger.debug("skipForwardHotkeyCommand")
+    setHotkey('skipforward')
