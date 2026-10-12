@@ -5,6 +5,7 @@ import random
 
 from modules.functions import mainFunctions
 from modules import configuration
+from modules.midiHandler import songTimeline
 
 activeTransposedNotes = {}
 activeNotes = set()
@@ -17,6 +18,9 @@ playThread = None
 playbackSpeed = 1.0
 sustainActive = False
 midiOut = None
+seekRequest = None
+positionSong = 0.0
+positionWall = 0.0
 
 log = mainFunctions.log
 
@@ -81,16 +85,64 @@ def parseMidi(message):
         if midiOut:
             midiOut.send(message)
 
-def playMidiOnce(midiFile):
+def setPosition(seconds):
+    global positionSong, positionWall
+    positionSong = seconds
+    positionWall = time.monotonic()
+
+def getPosition():
+    if paused:
+        return positionSong
+    return positionSong + (time.monotonic() - positionWall) * playbackSpeed
+
+def seek(seconds):
+    global seekRequest
+    seekRequest = max(0.0, seconds)
+    setPosition(seekRequest)
+    log(f"Seek: {formatTime(seekRequest)}")
+
+def releaseAll():
     global sustainActive
-    mid = mido.MidiFile(midiFile, clip=True)
+    if midiOut:
+        for note, channel in list(activeNotes):
+            try:
+                midiOut.send(mido.Message("note_off", note=note, velocity=0, channel=channel))
+            except Exception:
+                pass
+        if sustainActive:
+            try:
+                midiOut.send(mido.Message("control_change", control=64, value=0))
+            except Exception:
+                pass
+    activeNotes.clear()
+    activeTransposedNotes.clear()
+    sustainActive = False
+
+def playMidiOnce(song, startAt=0.0):
+    global sustainActive, seekRequest
+    index = song.indexAt(startAt)
+    prevSongTime = startAt
+    setPosition(startAt)
     startTime = time.monotonic()
     currentTime = 0
-    for msg in mid:
+    while index < len(song.events):
         if stopEvent.is_set() or closeThread:
             return False
 
-        adjustedDelay = msg.time / playbackSpeed
+        if seekRequest is not None:
+            target = min(seekRequest, song.length)
+            seekRequest = None
+            releaseAll()
+            index = song.indexAt(target)
+            prevSongTime = target
+            setPosition(target)
+            startTime = time.monotonic()
+            currentTime = 0
+            continue
+
+        eventTime, msg, hand = song.events[index]
+
+        adjustedDelay = (eventTime - prevSongTime) / playbackSpeed
         if configuration.configData["midiPlayer"]["randomFail"]["enabled"] and not msg.is_meta:
             if random.random() < configuration.configData["midiPlayer"]["randomFail"]["speed"] / 100:
                 adjustedDelay *= random.uniform(0.5, 1.5)
@@ -98,10 +150,14 @@ def playMidiOnce(midiFile):
         currentTime += adjustedDelay
         targetTime = startTime + currentTime
 
+        seeked = False
         while time.monotonic() < targetTime:
             if stopEvent.is_set() or closeThread:
                 return False
-            while paused and not (stopEvent.is_set() or closeThread):
+            if seekRequest is not None:
+                seeked = True
+                break
+            while paused and not (stopEvent.is_set() or closeThread) and seekRequest is None:
                 pauseStart = time.monotonic()
                 time.sleep(0.05)
                 delta = time.monotonic() - pauseStart
@@ -111,9 +167,21 @@ def playMidiOnce(midiFile):
             if remaining > 0:
                 time.sleep(min(remaining, 0.005))
 
+        if seeked:
+            continue
+
+        index += 1
+        prevSongTime = eventTime
+        if not paused:
+            setPosition(eventTime)
+
         if msg.is_meta:
             continue
 
+        if songTimeline.isNoteStart(msg) and not songTimeline.handAllowed(hand, configuration.configData["midiPlayer"].get("hand", "both")):
+            continue
+
+        msg = msg.copy()
         if hasattr(msg, "note"):
             n = msg.note
 
@@ -156,12 +224,14 @@ def playMidiOnce(midiFile):
 
     return True
 
-def playMidiFile(midiFile):
+def playMidiFile(midiFile, startAt=0.0):
     log("nanoMIDI Direct MIDI Out v1.0")
     log(f"Playing MIDI file: {midiFile}")
+    song = songTimeline.Song(midiFile)
 
     while not (stopEvent.is_set() or closeThread):
-        finished = playMidiOnce(midiFile)
+        finished = playMidiOnce(song, startAt)
+        startAt = 0.0
 
         if stopEvent.is_set() or closeThread:
             break
@@ -180,40 +250,32 @@ def formatTime(seconds):
     return f"{hours:0}:{minutes:02}:{secs:02}"
 
 def clockThread(totalSeconds, updateCallback=None):
-    global closeThread, playbackSpeed, paused
-    currentSeconds = 0
     while not (stopEvent.is_set() or closeThread):
-        if not paused:
-            shown = currentSeconds % max(1, int(totalSeconds))
-            formattedTime = f"{formatTime(shown)} / {formatTime(totalSeconds)}"
-            if updateCallback:
-                updateCallback(formattedTime)
-            else:
-                log(formattedTime)
-            currentSeconds += 1
-            for _ in range(10):
-                if stopEvent.is_set() or closeThread:
-                    break
-                time.sleep(0.1 / playbackSpeed)
-        else:
-            time.sleep(0.1)
+        shown = max(0.0, min(getPosition(), totalSeconds))
+        formattedTime = f"{formatTime(shown)} / {formatTime(totalSeconds)}"
+        if updateCallback:
+            updateCallback(formattedTime)
+        time.sleep(0.1)
 
-def startPlayback(midiFile, outputDevice, updateCallback=None):
-    global playThread, stopEvent, clockThreadRef, closeThread, paused, midiOut
+def startPlayback(midiFile, outputDevice, updateCallback=None, startAt=0.0):
+    global playThread, stopEvent, clockThreadRef, closeThread, paused, midiOut, seekRequest
     stopEvent.clear()
     closeThread = False
     paused = False
+    seekRequest = None
     if playThread is not None and isinstance(playThread, threading.Thread) and playThread.is_alive():
         return
     midiOut = mido.open_output(outputDevice)
     totalSeconds = mido.MidiFile(midiFile, clip=True).length
-    playThread = threading.Thread(target=playMidiFile, args=(midiFile,), daemon=True)
+    setPosition(startAt)
+    playThread = threading.Thread(target=playMidiFile, args=(midiFile, startAt), daemon=True)
     clockThreadRef = threading.Thread(target=clockThread, args=(totalSeconds, updateCallback), daemon=True)
     clockThreadRef.start()
     playThread.start()
 
 def pausePlayback():
     global paused, sustainActive
+    setPosition(getPosition())
     paused = not paused
     
     if paused and configuration.configData["midiPlayer"]["releaseOnPause"]:
@@ -234,6 +296,7 @@ def pausePlayback():
 
 def changeSpeed(amount):
     global playbackSpeed
+    setPosition(getPosition())
     playbackSpeed = max(0.1, min(5.0, playbackSpeed + amount))
     log(f"Speed: {playbackSpeed * 100:.0f}%")
 

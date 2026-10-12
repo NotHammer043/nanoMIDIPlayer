@@ -288,9 +288,10 @@ def startPlayback():
             MidiPlayerTab.stopButton.configure(state="normal", fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["StopColor"])
 
             def updateTimeline(text):
-                MidiPlayerTab.timelineIndicator.after(0, lambda: MidiPlayerTab.timelineIndicator.configure(text=text))
+                if not getattr(MidiPlayerTab, "seekDragging", False):
+                    MidiPlayerTab.timelineIndicator.after(0, lambda: MidiPlayerTab.timelineIndicator.configure(text=text))
 
-            useOutput.startPlayback(midiFile, outputDevice, updateCallback=updateTimeline)
+            useOutput.startPlayback(midiFile, outputDevice, updateCallback=updateTimeline, startAt=consumePendingStart(midiFile))
             logger.debug("useOutput.startPlayback called")
 
         elif app and not app.isRunning:
@@ -303,12 +304,20 @@ def startPlayback():
             MidiPlayerTab.stopButton.configure(state="normal", fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["StopColor"])
 
             def updateTimeline(text):
-                MidiPlayerTab.timelineIndicator.after(0, lambda: MidiPlayerTab.timelineIndicator.configure(text=text))
+                if not getattr(MidiPlayerTab, "seekDragging", False):
+                    MidiPlayerTab.timelineIndicator.after(0, lambda: MidiPlayerTab.timelineIndicator.configure(text=text))
 
-            midiHandler.startPlayback(midiFile, updateCallback=updateTimeline)
+            midiHandler.startPlayback(midiFile, updateCallback=updateTimeline, startAt=consumePendingStart(midiFile))
             logger.debug("midiHandler.startPlayback called")
     except Exception as e:
         logger.exception(f"startPlayback error: {e}")
+
+def consumePendingStart(midiFile):
+    global pendingStart
+    currentSongLength()
+    startAt = pendingStart
+    pendingStart = 0.0
+    return startAt
 
 def stopPlayback():
     logger.info("stopPlayback called")
@@ -452,6 +461,61 @@ def changeTranspose(value):
         configuration.configData.save()
     except Exception as e:
         logger.exception(f"changeTranspose error: {e}")
+
+HAND_OPTIONS = {
+    "Both": "both",
+    "Left": "left",
+    "Right": "right",
+}
+
+def changeHand(value):
+    logger.info(f"changeHand called: {value}")
+    try:
+        configuration.configData["midiPlayer"]["hand"] = HAND_OPTIONS.get(value, "both")
+        configuration.configData.save()
+        mainFunctions.log(f"Hands: {value}")
+    except Exception as e:
+        logger.exception(f"changeHand error: {e}")
+
+# SEEK BAR
+pendingStart = 0.0
+seekFile = None
+seekLength = 0.0
+
+def activeHandler():
+    return useOutput if configuration.configData["midiPlayer"]["useMIDIOutput"] else midiHandler
+
+def currentSongLength():
+    global seekFile, seekLength, pendingStart
+    midiFile = MidiPlayerTab.filePathEntry.get()
+    if midiFile != seekFile:
+        seekFile = midiFile
+        pendingStart = 0.0
+        try:
+            seekLength = MidiFile(midiFile, clip=True).length if os.path.isfile(midiFile) else 0.0
+        except Exception as e:
+            logger.warning(f"could not read song length: {e}")
+            seekLength = 0.0
+    return seekLength
+
+def getPlaybackPosition():
+    if app.isRunning:
+        return max(0.0, min(activeHandler().getPosition(), currentSongLength()))
+    return pendingStart
+
+def seekTo(seconds):
+    global pendingStart
+    logger.info(f"seekTo called: {seconds:.2f}")
+    try:
+        seconds = max(0.0, min(seconds, currentSongLength()))
+        if app.isRunning:
+            activeHandler().seek(seconds)
+        else:
+            pendingStart = seconds
+            total = currentSongLength()
+            MidiPlayerTab.timelineIndicator.configure(text=f"{midiHandler.formatTime(seconds)} / {midiHandler.formatTime(total)}")
+    except Exception as e:
+        logger.exception(f"seekTo error: {e}")
 
 def increaseSpeed():
     logger.info("increaseSpeed called")

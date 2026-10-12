@@ -316,6 +316,33 @@ class MidiPlayerTab(ctk.CTkFrame):
         self.__class__.keyTransposeDropdown = self.keyTransposeDropdown
         ToolTip.CreateToolTip(self.keyTransposeDropdown, text='Transpose playback by semitones\nC = no transpose (default)')
 
+        # HAND SELECTION
+        _handLabels = {"both": "Both", "left": "Left", "right": "Right"}
+        _initHandLabel = _handLabels.get(configuration.configData.get("midiPlayer", {}).get("hand", "both"), "Both")
+
+        self.handLabel = ctk.CTkLabel(
+            self.midiFrame, text="Hands", fg_color="transparent", font=customTheme.globalFont14,
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"],
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.handLabel.grid(row=6, column=0, padx=(40, 0), pady=(10, 0))
+
+        self.handDropdown = ctk.CTkOptionMenu(
+            self.midiFrame, width=90, values=["Both", "Left", "Right"],
+            font=customTheme.globalFont14, dropdown_font=customTheme.globalFont14,
+            command=midiPlayerFunctions.changeHand,
+            fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionBackColor"],
+            dropdown_fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownBackground"],
+            button_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownButtonColor"],
+            button_hover_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["OptionDropdownButtonHoverColor"],
+            text_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColor"],
+            text_color_disabled=customTheme.activeThemeData["Theme"]["MidiPlayer"]["TextColorDisabled"]
+        )
+        self.handDropdown.set(_initHandLabel)
+        self.handDropdown.grid(row=7, column=0, padx=(40, 0), pady=(4, 10))
+        self.__class__.handDropdown = self.handDropdown
+        ToolTip.CreateToolTip(self.handDropdown, text='Which hand to play\nUses the song\'s left/right hand tracks,\nor splits at middle C if it has only one')
+
         # PLAYBACK BUTTONS
         self.playButton = ctk.CTkButton(
             self.midiFrame, text="Play", fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["PlayColor"], 
@@ -348,6 +375,24 @@ class MidiPlayerTab(ctk.CTkFrame):
         )
         self.timelineIndicator.grid(row=10, column=0, padx=(0, 50), pady=(0, 0), sticky="e")
         self.__class__.timelineIndicator = self.timelineIndicator
+
+        # SEEK BAR
+        self.__class__.seekDragging = False
+        self.seekSlider = ctk.CTkSlider(
+            self.midiFrame, from_=0, to=1, width=340,
+            command=self.previewSeek,
+            fg_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderBackColor"],
+            progress_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderFillColor"],
+            button_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderCircleColor"],
+            button_hover_color=customTheme.activeThemeData["Theme"]["MidiPlayer"]["SpeedSliderCircleHoverColor"]
+        )
+        self.seekSlider.grid(row=11, column=0, padx=(0, 0), pady=(8, 10))
+        self.seekSlider.set(0)
+        self.seekSlider.bind("<Button-1>", self.startSeekDrag, add="+")
+        self.seekSlider.bind("<ButtonRelease-1>", self.finishSeekDrag, add="+")
+        self.__class__.seekSlider = self.seekSlider
+        ToolTip.CreateToolTip(self.seekSlider, text='Song position\nClick or drag to jump to that part')
+        self.after(200, self.refreshSeekBar)
 
         # FINGER LIMIT
         _pianoInitLimit = configuration.configData.get("midiPlayer", {}).get("fingerLimit", 11)
@@ -442,3 +487,28 @@ class MidiPlayerTab(ctk.CTkFrame):
         self.speedSlider.bind("<ButtonRelease-1>", lambda value: settingsFunctions.updateFromEntry("midiSpeedController", value))
 
         mainFunctions.insertConsoleText("Hello! :)", ignoreConsoleCheck=False)
+
+    def startSeekDrag(self, event=None):
+        self.__class__.seekDragging = True
+
+    def previewSeek(self, value):
+        from modules.functions import midiPlayerFunctions
+        formatTime = midiPlayerFunctions.midiHandler.formatTime
+        total = midiPlayerFunctions.currentSongLength()
+        self.timelineIndicator.configure(text=f"{formatTime(value)} / {formatTime(total)}")
+
+    def finishSeekDrag(self, event=None):
+        from modules.functions import midiPlayerFunctions
+        midiPlayerFunctions.seekTo(self.seekSlider.get())
+        self.__class__.seekDragging = False
+
+    def refreshSeekBar(self):
+        from modules.functions import midiPlayerFunctions
+        try:
+            if not self.__class__.seekDragging:
+                total = midiPlayerFunctions.currentSongLength()
+                self.seekSlider.configure(to=max(total, 0.001))
+                self.seekSlider.set(midiPlayerFunctions.getPlaybackPosition())
+        except Exception:
+            pass
+        self.after(200, self.refreshSeekBar)
