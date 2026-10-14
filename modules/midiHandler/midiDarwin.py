@@ -13,6 +13,7 @@ from modules import configuration
 pressedKeys = set()
 heldKeys = set()
 activeTransposedNotes = {}
+noteToKeyMap = {}  # Maps MIDI note -> set of keyboard keys it owns
 
 log = mainFunctions.log
 
