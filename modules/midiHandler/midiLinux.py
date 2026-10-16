@@ -13,6 +13,7 @@ from modules import configuration
 pressedKeys = set()
 heldKeys = set()
 activeTransposedNotes = {}
+noteToKeyMap = {}  # Maps MIDI note -> set of keyboard keys it owns
 
 log = mainFunctions.log
 
@@ -175,20 +176,38 @@ def simulateKey(msgType, note, velocity):
 
         if 36 <= note <= 96:
             if configuration.configData["midiPlayer"]["noDoubles"]:
-                if re.search("[!@$%^*(]", key):
-                    release(letterNoteMap[str(note - 1)])
-                else:
-                    release(key.lower())
+                # Determine the base key this note would use
+                baseKey = key.lower() if not re.search("[!@$%^*(]", key) else letterNoteMap[str(note - 1)]
+                
+                # Find which note currently owns this key and revoke ownership
+                for otherNote, keys in list(noteToKeyMap.items()):
+                    if baseKey in keys:
+                        keys.discard(baseKey)
+                        # Actually release the key
+                        release(baseKey)
+                        if not keys:
+                            del noteToKeyMap[otherNote]
+                        break
+            
+            # Press the new key(s) and record ownership
+            pressedKeys = set()
             if re.search("[!@$%^*(]", key):
                 press("shift")
                 pressAndMaybeRelease(letterNoteMap[str(note - 1)])
                 release("shift")
+                pressedKeys.add(letterNoteMap[str(note - 1)])
             elif key.isupper():
                 press("shift")
                 pressAndMaybeRelease(key.lower())
                 release("shift")
+                pressedKeys.add(key.lower())
             else:
                 pressAndMaybeRelease(key)
+                pressedKeys.add(key)
+            
+            # Record ownership
+            if pressedKeys:
+                noteToKeyMap[note] = pressedKeys
         else:
             release(key.lower())
             press("ctrl")
@@ -198,10 +217,11 @@ def simulateKey(msgType, note, velocity):
     elif msgType == "note_off":
         global heldNoteCount
         if 36 <= note <= 96:
-            if re.search("[!@$%^*(]", key):
-                release(letterNoteMap[str(note - 1)])
-            else:
-                release(key.lower())
+            # Only release keys this note owns
+            if note in noteToKeyMap:
+                for k in noteToKeyMap[note]:
+                    release(k)
+                del noteToKeyMap[note]
         else:
             release(key.lower())
         heldNoteCount = max(0, heldNoteCount - 1)
