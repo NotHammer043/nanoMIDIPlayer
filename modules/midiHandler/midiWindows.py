@@ -213,8 +213,6 @@ def simulateKey(msgType, note, velocity):
             press("ctrl")
             pressAndMaybeRelease(key.lower())
             release("ctrl")
-            # Record ownership for outside-range notes too
-            noteToKeyMap[note] = {key.lower()}
 
     elif msgType == "note_off":
         global heldNoteCount
@@ -225,11 +223,7 @@ def simulateKey(msgType, note, velocity):
                     release(k)
                 del noteToKeyMap[note]
         else:
-            # For notes outside 36-96, same logic
-            if note in noteToKeyMap:
-                for k in noteToKeyMap[note]:
-                    release(k)
-                del noteToKeyMap[note]
+            release(key.lower())
         heldNoteCount = max(0, heldNoteCount - 1)
 
 def parseMidi(message):

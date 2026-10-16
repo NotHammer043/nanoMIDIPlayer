@@ -194,8 +194,6 @@ def simulateKey(msgType, note, velocity):
             press("ctrl")
             pressAndMaybeRelease(key.lower())
             release("ctrl")
-            # Record ownership for outside-range notes too
-            noteToKeyMap[note] = {key.lower()}
 
     elif msgType == "note_off":
         pianoWidget.up(note)
@@ -207,11 +205,7 @@ def simulateKey(msgType, note, velocity):
                     release(k)
                 del noteToKeyMap[note]
         else:
-            # For notes outside 36-96, same logic
-            if note in noteToKeyMap:
-                for k in noteToKeyMap[note]:
-                    release(k)
-                del noteToKeyMap[note]
+            release(key.lower())
 
 def parseMidi(message):
     global sustainActive
